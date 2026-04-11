@@ -8,6 +8,8 @@ Enclave is a multi-tenant private treasury layer for autonomous agents on Stella
 
 **Shared on-chain ASP, per-org policy enforced off-chain.** One shared privacy pool + one shared membership set on-chain gives every organization the maximum anonymity set. Per-organization spending rules, caps, and audit trails are enforced by the facilitator off-chain. An organization is a policy over a shared membership set — not an on-chain anonymity set of its own.
 
+Put differently: there is exactly one shared on-chain ASP for the whole pool, and Enclave layers per-org policy on top of it off-chain.
+
 This is a deliberate architectural lock. Per-org on-chain ASPs are technically infeasible on the current pool contract (the pool hard-codes one ASP root; see `PITFALLS.md §1`). Ship-ready designs for per-org on-chain ASPs are deferred to v2 (Approach B).
 
 ## What's in the box
