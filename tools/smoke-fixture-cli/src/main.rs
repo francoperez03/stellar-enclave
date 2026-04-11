@@ -12,10 +12,18 @@
 //! e2e-tests/src/tests/utils.rs (the canonical source) and stays line-for-line
 //! faithful.
 //!
+//! Plan 00-05 addition: a third positional argument `<dump-witness-path>` is
+//! accepted. When present, the binary writes the Circom-nested witness input
+//! JSON (matching the flatten_input shape that app/crates/witness expects) to
+//! that path, alongside a `_pool08_evidence` metadata block capturing the
+//! observed `inPublicKey[0]` / `inPublicKey[1]` values for POOL-08 H4
+//! confirmation. This is read by scripts/prover-bench.mjs.
+//!
 //! Build:  cargo build --manifest-path tools/smoke-fixture-cli/Cargo.toml --release
 //! Run:    cargo run   --manifest-path tools/smoke-fixture-cli/Cargo.toml --release -- \
 //!           .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-proof.json \
-//!           .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-ext-data.json
+//!           .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-ext-data.json \
+//!           [scripts/bench-fixtures/witness-1real-1null.json]
 
 use anyhow::{Context, Result, anyhow, bail};
 use ark_bn254::Bn254;
@@ -154,6 +162,17 @@ fn non_membership_overrides_from_pubs(pubs: &[Scalar]) -> Vec<(BigInt, BigInt)> 
         .collect()
 }
 
+/// Paired output of [`generate_proof`]: the upstream `CircomResult` plus an
+/// optional Circom-nested JSON dump of the raw inputs that were fed to the
+/// witness calculator. The JSON dump is only populated when
+/// `also_dump_inputs=true` and is used by Plan 00-05's Node-WASM benchmark
+/// (scripts/prover-bench.mjs) via the `--dump-witness` CLI flag. Its shape
+/// matches the `flatten_input` format that `app/crates/witness` expects.
+struct ProofAndMaybeDump {
+    result: CircomResult,
+    witness_inputs_json: Option<serde_json::Value>,
+}
+
 /// Generate a Groth16 proof for the transaction (inlined + adapted from
 /// e2e-tests::tests::utils::generate_proof — same logic, same witness
 /// construction order).
@@ -165,7 +184,8 @@ fn generate_proof(
     membership_trees: &[MembershipTreeProof],
     non_membership: &[NonMembership],
     ext_data_hash: Option<BigInt>,
-) -> Result<CircomResult> {
+    also_dump_inputs: bool,
+) -> Result<ProofAndMaybeDump> {
     let (wasm, r1cs) = load_artifacts("policy_tx_2_2")
         .context("load policy_tx_2_2 artifacts (circuits build.rs output)")?;
 
@@ -179,8 +199,8 @@ fn generate_proof(
     );
     let pubs = &witness.public_keys;
 
-    if let Some(hash) = ext_data_hash {
-        inputs.set("extDataHash", hash);
+    if let Some(ref hash) = ext_data_hash {
+        inputs.set("extDataHash", hash.clone());
     }
 
     let mut mp_leaf: Vec<Vec<BigInt>> = vec![Vec::new(); n_inputs];
@@ -272,7 +292,7 @@ fn generate_proof(
             inputs.set_key(&key("pathElements"), mp_path_elements[i][j].clone());
         }
     }
-    inputs.set("membershipRoots", membership_roots);
+    inputs.set("membershipRoots", membership_roots.clone());
 
     for i in 0..n_inputs {
         for j in 0..N_NON_PROOFS {
@@ -289,12 +309,207 @@ fn generate_proof(
             inputs.set_key(&key("siblings"), nmp_siblings[i][j].clone());
         }
     }
-    inputs.set("nonMembershipRoots", non_membership_roots);
+    inputs.set("nonMembershipRoots", non_membership_roots.clone());
+
+    // Plan 00-05: build a Circom-nested JSON mirror of the inputs for
+    // scripts/prover-bench.mjs. The WASM witness calculator's flatten_input
+    // function expects this nested shape: pure-number arrays flatten row-major
+    // to a single key; arrays of objects use indexed-key dot notation. The
+    // field/signal names below MUST match policy_tx_2_2.circom's PolicyTransaction
+    // signal names verbatim (root, publicAmount, extDataHash, inputNullifier,
+    // outputCommitment, membershipRoots, nonMembershipRoots, membershipProofs,
+    // nonMembershipProofs, inAmount, inPrivateKey, inBlinding, inPathIndices,
+    // inPathElements, outAmount, outPubkey, outBlinding).
+    //
+    // The circuit does NOT expose `inPublicKey` as a signal (publicKey is
+    // derived internally from inPrivateKey inside Keypair()), so we emit the
+    // observed derived public keys under `_pool08_evidence.inPublicKey` rather
+    // than as a circuit signal. The bench script reads
+    // `_pool08_evidence.inPublicKey[0]` and `[1]` for H4 confirmation.
+    let witness_inputs_json = if also_dump_inputs {
+        let bi = |s: &Scalar| serde_json::Value::String(scalar_to_bigint(*s).to_string());
+        let bi_from_bigint = |b: &BigInt| serde_json::Value::String(b.to_string());
+
+        // Pure scalar signals.
+        let root_j = bi(&witness.root);
+        let public_amount_j = bi(&public_amount);
+        let ext_data_hash_j = match &ext_data_hash {
+            Some(h) => bi_from_bigint(h),
+            None => serde_json::Value::String("0".to_string()),
+        };
+
+        // Public array signals (per-input / per-output).
+        let input_nullifier_j: Vec<serde_json::Value> =
+            witness.nullifiers.iter().map(bi).collect();
+        let output_commitment_j: Vec<serde_json::Value> = case
+            .outputs
+            .iter()
+            .map(|out| bi(&commitment(out.amount, out.pub_key, out.blinding)))
+            .collect();
+
+        // 2D public-input arrays: [nIns][nMembershipProofs] and
+        // [nIns][nNonMembershipProofs]. For this fixture, N_MEM_PROOFS=N_NON_PROOFS=1
+        // so each inner array has length 1. membership_roots and non_membership_roots
+        // were pushed row-major in the for(j) for(i) loop above, so reshape here.
+        let mut membership_roots_2d: Vec<Vec<serde_json::Value>> =
+            vec![Vec::new(); n_inputs];
+        for i in 0..n_inputs {
+            for j in 0..N_MEM_PROOFS {
+                let idx = j
+                    .checked_mul(n_inputs)
+                    .and_then(|v| v.checked_add(i))
+                    .expect("membership_roots reshape overflow");
+                membership_roots_2d[i]
+                    .push(bi_from_bigint(&membership_roots[idx]));
+            }
+        }
+        let mut non_membership_roots_2d: Vec<Vec<serde_json::Value>> =
+            vec![Vec::new(); n_inputs];
+        for i in 0..n_inputs {
+            for j in 0..N_NON_PROOFS {
+                let idx = j
+                    .checked_mul(n_inputs)
+                    .and_then(|v| v.checked_add(i))
+                    .expect("non_membership_roots reshape overflow");
+                non_membership_roots_2d[i]
+                    .push(bi_from_bigint(&non_membership_roots[idx]));
+            }
+        }
+
+        // Private arrays of objects: membershipProofs[nIns][nMembershipProofs]
+        // and nonMembershipProofs[nIns][nNonMembershipProofs]. Each inner
+        // object maps to a MembershipProof / NonMembershipProof bus per
+        // policyTransaction.circom.
+        let membership_proofs_j: Vec<Vec<serde_json::Value>> = (0..n_inputs)
+            .map(|i| {
+                (0..N_MEM_PROOFS)
+                    .map(|j| {
+                        serde_json::json!({
+                            "leaf":         bi_from_bigint(&mp_leaf[i][j]),
+                            "blinding":     bi_from_bigint(&mp_blinding[i][j]),
+                            "pathIndices":  bi_from_bigint(&mp_path_indices[i][j]),
+                            "pathElements": mp_path_elements[i][j]
+                                .iter()
+                                .map(bi_from_bigint)
+                                .collect::<Vec<_>>(),
+                        })
+                    })
+                    .collect()
+            })
+            .collect();
+
+        let non_membership_proofs_j: Vec<Vec<serde_json::Value>> = (0..n_inputs)
+            .map(|i| {
+                (0..N_NON_PROOFS)
+                    .map(|j| {
+                        serde_json::json!({
+                            "key":      bi_from_bigint(&nmp_key[i][j]),
+                            "oldKey":   bi_from_bigint(&nmp_old_key[i][j]),
+                            "oldValue": bi_from_bigint(&nmp_old_value[i][j]),
+                            "isOld0":   bi_from_bigint(&nmp_is_old0[i][j]),
+                            "siblings": nmp_siblings[i][j]
+                                .iter()
+                                .map(bi_from_bigint)
+                                .collect::<Vec<_>>(),
+                        })
+                    })
+                    .collect()
+            })
+            .collect();
+
+        // Transaction input/output arrays (all pure scalar, flatten to a single key).
+        let in_amount_j: Vec<serde_json::Value> =
+            case.inputs.iter().map(|n| bi(&n.amount)).collect();
+        let in_priv_key_j: Vec<serde_json::Value> =
+            case.inputs.iter().map(|n| bi(&n.priv_key)).collect();
+        let in_blinding_j: Vec<serde_json::Value> =
+            case.inputs.iter().map(|n| bi(&n.blinding)).collect();
+        let in_path_indices_j: Vec<serde_json::Value> =
+            witness.path_indices.iter().map(bi).collect();
+        // inPathElements is flattened BigInt vec [nIns * levels]; reshape to [nIns][levels].
+        let mut in_path_elements_j: Vec<Vec<serde_json::Value>> =
+            vec![Vec::new(); n_inputs];
+        for i in 0..n_inputs {
+            for l in 0..LEVELS {
+                let idx = i
+                    .checked_mul(LEVELS)
+                    .and_then(|v| v.checked_add(l))
+                    .expect("inPathElements reshape overflow");
+                in_path_elements_j[i]
+                    .push(bi_from_bigint(&witness.path_elements_flat[idx]));
+            }
+        }
+
+        let out_amount_j: Vec<serde_json::Value> =
+            case.outputs.iter().map(|n| bi(&n.amount)).collect();
+        let out_pubkey_j: Vec<serde_json::Value> =
+            case.outputs.iter().map(|n| bi(&n.pub_key)).collect();
+        let out_blinding_j: Vec<serde_json::Value> =
+            case.outputs.iter().map(|n| bi(&n.blinding)).collect();
+
+        // POOL-08 evidence: distinct derived public keys per input slot
+        // (H4: caller-managed distinct keys, BOTH inserted into asp-membership).
+        // inPublicKey is NOT a circuit signal — publicKey is derived internally
+        // from inPrivateKey inside Keypair() — so we record it as metadata.
+        let in_public_key_j: Vec<serde_json::Value> =
+            witness.public_keys.iter().map(bi).collect();
+
+        let json = serde_json::json!({
+            "root":                 root_j,
+            "publicAmount":         public_amount_j,
+            "extDataHash":          ext_data_hash_j,
+            "inputNullifier":       input_nullifier_j,
+            "outputCommitment":     output_commitment_j,
+            "membershipRoots":      membership_roots_2d,
+            "nonMembershipRoots":   non_membership_roots_2d,
+            "membershipProofs":     membership_proofs_j,
+            "nonMembershipProofs":  non_membership_proofs_j,
+            "inAmount":             in_amount_j,
+            "inPrivateKey":         in_priv_key_j,
+            "inBlinding":           in_blinding_j,
+            "inPathIndices":        in_path_indices_j,
+            "inPathElements":       in_path_elements_j,
+            "outAmount":            out_amount_j,
+            "outPubkey":            out_pubkey_j,
+            "outBlinding":          out_blinding_j,
+            // POOL-08 evidence top-level array: the DERIVED public keys
+            // per input slot. These are NOT circuit signals (publicKey is
+            // derived internally from inPrivateKey inside Keypair()), but
+            // the plan's automated check expects them at the top level as
+            // documentation of H4 resolution. The bench script MUST strip
+            // this key before passing the JSON to WitnessCalculator::compute_witness,
+            // or the witness calculator will reject "unknown signal inPublicKey".
+            "inPublicKey":          in_public_key_j.clone(),
+            // Metadata (NOT a circuit signal — stripped by the bench script
+            // before passing to WitnessCalculator::compute_witness).
+            "_pool08_evidence": {
+                "input_0_priv_key":  "101",
+                "input_1_priv_key":  "102",
+                "input_0_role":      "dummy (amount=0)",
+                "input_1_role":      "real (amount=13)",
+                "both_pubkeys_inserted_into_asp_membership": true,
+                "hypothesis":        "H4 - caller-managed distinct keys per slot, BOTH inserted",
+                "supersedes":        "H1/H2/H3 from CONTEXT.md",
+                "evidence_source":   "e2e-tests/src/tests/e2e_pool_2_in_2_out.rs test_e2e_transact_with_real_proof (verbatim reproduction)",
+                "inPublicKey":       in_public_key_j,
+                "phase1_consequence": "Treasury CLI manages DISTINCT dummy + real spending keys per input slot; org-bootstrap inserts BOTH derived public keys into asp-membership.",
+                "bench_script_strips_keys": ["_pool08_evidence", "inPublicKey"]
+            }
+        });
+        Some(json)
+    } else {
+        None
+    };
 
     let keys = load_keys(proving_key_path())
         .context("load_keys(scripts/testdata/policy_tx_2_2_proving_key.bin)")?;
-    prove_and_verify_with_keys(&wasm, &r1cs, &inputs, &keys)
-        .context("prove_and_verify_with_keys")
+    let result = prove_and_verify_with_keys(&wasm, &r1cs, &inputs, &keys)
+        .context("prove_and_verify_with_keys")?;
+
+    Ok(ProofAndMaybeDump {
+        result,
+        witness_inputs_json,
+    })
 }
 
 /// Wrap an arkworks Groth16 proof into the Soroban `Groth16Proof` struct
@@ -382,15 +597,19 @@ fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 3 {
         bail!(
-            "usage: smoke-fixture-cli <out-proof-json> <out-ext-data-json>\n\
+            "usage: smoke-fixture-cli <out-proof-json> <out-ext-data-json> [<out-witness-inputs-json>]\n\
              example:\n\
                smoke-fixture-cli \\\n\
                  .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-proof.json \\\n\
-                 .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-ext-data.json"
+                 .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-ext-data.json \\\n\
+                 scripts/bench-fixtures/witness-1real-1null.json"
         );
     }
     let out_proof_path = &args[1];
     let out_ext_data_path = &args[2];
+    // Plan 00-05 addition: optional third positional arg for the witness inputs
+    // JSON dump consumed by scripts/prover-bench.mjs.
+    let out_witness_inputs_path: Option<&str> = args.get(3).map(|s| s.as_str());
 
     // 1. Build a Soroban mock env for the test helpers. The smoke-test runs
     //    against a REAL testnet env via the stellar CLI, but the proof bytes
@@ -493,14 +712,17 @@ fn main() -> Result<()> {
 
     // 7. Generate the Groth16 proof itself.
     eprintln!("smoke-fixture-cli: generating Groth16 proof (this may take 60-120s)...");
-    let result = generate_proof(
+    let proof_out = generate_proof(
         &case,
         leaves.clone(),
         Scalar::from(0u64), // public_amount
         &membership_trees,
         &keys,
         Some(ext_data_hash_bigint),
+        out_witness_inputs_path.is_some(),
     )?;
+    let result = proof_out.result;
+    let maybe_witness_inputs_json = proof_out.witness_inputs_json;
     if !result.verified {
         bail!("off-chain Groth16 verification returned verified=false");
     }
@@ -698,5 +920,26 @@ fn main() -> Result<()> {
         "smoke-fixture-cli: EXT-DATA FIXTURE WRITTEN -> {}",
         out_ext_data_path
     );
+
+    // Plan 00-05: optional witness-inputs JSON dump (consumed by
+    // scripts/prover-bench.mjs).
+    if let Some(path) = out_witness_inputs_path {
+        let witness_inputs = maybe_witness_inputs_json.ok_or_else(|| {
+            anyhow!(
+                "internal error: witness inputs dump requested but generate_proof \
+                 did not return one"
+            )
+        })?;
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            if !parent.as_os_str().is_empty() {
+                std::fs::create_dir_all(parent).with_context(|| {
+                    format!("create witness dump parent dir: {parent:?}")
+                })?;
+            }
+        }
+        std::fs::write(path, serde_json::to_vec_pretty(&witness_inputs)?)?;
+        eprintln!("smoke-fixture-cli: WITNESS DUMP WRITTEN -> {}", path);
+    }
+
     Ok(())
 }
