@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = 'poolstellar';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 /**
  * Store configuration for IndexedDB schema.
@@ -38,6 +38,25 @@ const STORES = {
     registered_public_keys: {
         keyPath: 'address',
         indexes: [{ name: 'by_ledger', keyPath: 'ledger' }]
+    },
+    // Phase 1 Enclave stores (Plan 01-02). Additive schema bump (v5 -> v6).
+    // The onupgradeneeded handler iterates STORES and creates missing stores
+    // with the !contains() guard, so these three are created on upgrade while
+    // existing stores remain untouched.
+    enclave_orgs: {
+        keyPath: 'adminAddress',
+        indexes: [{ name: 'by_orgId', keyPath: 'orgId', unique: true }]
+    },
+    enclave_agents: {
+        keyPath: 'id',
+        indexes: [
+            { name: 'by_orgId', keyPath: 'orgId' },
+            { name: 'by_agentName', keyPath: 'agentName' }
+        ]
+    },
+    enclave_note_tags: {
+        keyPath: 'commitment',
+        indexes: [{ name: 'by_orgId', keyPath: 'orgId' }]
     }
 };
 
@@ -48,7 +67,7 @@ let dbClosing = false;
  * Opens the IndexedDB database, creating stores if needed.
  * @returns {Promise<IDBDatabase>}
  */
-function openDatabase() {
+export function openDatabase() {
     // Return cached instance only if it's valid and not closing
     if (dbInstance && !dbClosing) {
         return Promise.resolve(dbInstance);
