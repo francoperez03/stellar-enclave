@@ -55,3 +55,18 @@ ceremony/
 .planning/
 
 .claude
+
+# Phase 0 secret hardening (SETUP-01, OPS-04, SDK-05)
+# Added day 1 to preclude secret leaks across the full hackathon window.
+*.key
+*.pem
+.env
+.env.local
+.env.*.local
+secrets/
+wallets/
+deployments-local.json
+fixtures/*.secret.*
+
+# Node workspaces (Phase 0 scaffold)
+node_modules/
