@@ -70,3 +70,4 @@ fixtures/*.secret.*
 
 # Node workspaces (Phase 0 scaffold)
 node_modules/
+**/tsconfig.tsbuildinfo
