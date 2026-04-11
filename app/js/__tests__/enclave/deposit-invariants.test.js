@@ -26,7 +26,40 @@
 jest.mock('../../prover.js', () => require('../../__mocks__/prover.js'), { virtual: true });
 jest.mock('../../witness/witness.js', () => require('../../__mocks__/witness.js'), { virtual: true });
 
+// ORG-03 + POOL-02 tests (Plan 01-03) mock the heavy upstream modules so
+// deposit.js can be unit-tested without touching real prover/stellar SDK.
+// These mocks also make sure transaction-builder.js (which imports the SDK
+// directly) is never loaded by the test runtime.
+jest.mock('../../transaction-builder.js', () => ({
+    __esModule: true,
+    generateDepositProof: jest.fn(),
+}));
+jest.mock('../../stellar.js', () => ({
+    __esModule: true,
+    submitDeposit: jest.fn(),
+    getNetwork: jest.fn(() => ({
+        name: 'testnet',
+        horizonUrl: 'https://horizon-testnet.stellar.org',
+        rpcUrl:     'https://soroban-testnet.stellar.org',
+        passphrase: 'Test SDF Network ; September 2015',
+    })),
+}));
+
+import 'fake-indexeddb/auto';
 import { encryptNoteData, derivePublicKey } from '../../bridge.js';
+import { generateDepositProof } from '../../transaction-builder.js';
+import { submitDeposit } from '../../stellar.js';
+import { depositForOrg } from '../../enclave/deposit.js';
+import {
+    putOrg,
+    listNoteTags,
+} from '../../enclave/registry.js';
+import {
+    setCachedOrgKeys,
+    clearCachedOrgKeys,
+} from '../../enclave/keys.js';
+import { deleteDatabase } from '../../state/db.js';
+import { readFileSync } from 'fs';
 
 function randomBytes(n) {
     const b = new Uint8Array(n);
@@ -100,5 +133,325 @@ describe('encryptNoteData 112-byte invariant (POOL-04 primary)', () => {
         expect(() => encryptNoteData(badKey, { amount: 1n, blinding })).toThrow(
             /32 bytes/
         );
+    });
+});
+
+// ============================================================================
+// Plan 01-03 Task 2 — depositForOrg (ORG-03 + POOL-02)
+// ============================================================================
+//
+// depositForOrg wraps generateDepositProof with orgSpendingPubKey as the
+// recipient for outputs[0], lets upstream pad outputs[1] with a random
+// dummy, submits via submitDeposit (NOT callPoolTransact — Gotcha 1), and
+// writes a enclave_note_tags row after confirmation.
+
+const DEPOSIT_ADMIN = 'GDEPOSIT1ADMIN';
+const DEPOSIT_PUB   = new Uint8Array(32).fill(0xaa);
+const DEPOSIT_PRIV  = new Uint8Array(32).fill(0xbb);
+const DEPOSIT_ENC_PUB  = new Uint8Array(32).fill(0xcc);
+const DEPOSIT_ENC_PRIV = new Uint8Array(32).fill(0xdd);
+
+const DEPOSIT_DEPLOYMENTS = {
+    network: 'testnet',
+    admin: DEPOSIT_ADMIN,
+    pool:               'CPOOL_CONTRACT_ID',
+    asp_membership:     'CASP_MEMBERSHIP_ID',
+    asp_non_membership: 'CASP_NONMEMBERSHIP_ID',
+    verifier:           'CVERIFIER_ID',
+    initialized: true,
+};
+
+const ROOTS_SNAPSHOT = {
+    poolRoot:          123n,
+    membershipRoot:    456n,
+    nonMembershipRoot: 789n,
+};
+
+function validProofResult() {
+    return {
+        sorobanProof: {
+            proof: { a: new Uint8Array(64), b: new Uint8Array(128), c: new Uint8Array(64) },
+            root: 123n,
+            input_nullifiers: [1n, 2n],
+            output_commitment0: 9999n,
+            output_commitment1: 8888n,
+            public_amount: 1000n,
+            ext_data_hash: new Uint8Array(32),
+            asp_membership_root: 456n,
+            asp_non_membership_root: 789n,
+        },
+        extData: {
+            encrypted_output0: new Uint8Array(112),
+            encrypted_output1: new Uint8Array(112),
+            ext_amount: 1000n,
+            recipient: DEPOSIT_DEPLOYMENTS.pool,
+        },
+    };
+}
+
+async function seedOrgRow(leafIndex = 3) {
+    await putOrg({
+        adminAddress: DEPOSIT_ADMIN,
+        orgId: 'org-gdepos-aaaabbbb',
+        orgSpendingPubKey: '0x' + 'aa'.repeat(32),
+        aspLeaf:           '0x' + 'ee'.repeat(32),
+        aspLeafIndex:      leafIndex,
+        createdAt: '2026-04-11T00:00:00.000Z',
+        deployTxHash: '0xdeployhash',
+    });
+}
+
+function seedCachedKeys() {
+    setCachedOrgKeys(DEPOSIT_ADMIN, {
+        orgSpendingPrivKey: DEPOSIT_PRIV,
+        orgSpendingPubKey:  DEPOSIT_PUB,
+        orgEncryptionKeypair: {
+            publicKey:  DEPOSIT_ENC_PUB,
+            privateKey: DEPOSIT_ENC_PRIV,
+        },
+    });
+}
+
+function fakeSignerOptions() {
+    return {
+        publicKey: DEPOSIT_ADMIN,
+        signTransaction: jest.fn(),
+        signAuthEntry: jest.fn(),
+    };
+}
+
+describe('depositForOrg — ORG-03 + POOL-02 invariants', () => {
+    beforeEach(async () => {
+        await deleteDatabase();
+        clearCachedOrgKeys();
+        generateDepositProof.mockReset();
+        submitDeposit.mockReset();
+
+        // Default stubs — override per test as needed.
+        generateDepositProof.mockResolvedValue(validProofResult());
+        submitDeposit.mockResolvedValue({ success: true, txHash: 'fakedeposithash' });
+    });
+
+    afterAll(async () => {
+        await deleteDatabase();
+        clearCachedOrgKeys();
+    });
+
+    test('depositForOrg_bindsOutputsToOrgPubKey', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+
+        await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        expect(generateDepositProof).toHaveBeenCalledTimes(1);
+        const capturedParams = generateDepositProof.mock.calls[0][0];
+        expect(capturedParams.outputs).toBeDefined();
+        expect(capturedParams.outputs.length).toBeGreaterThanOrEqual(1);
+
+        // Every output entry we provide must bind the org's spending pubkey
+        // as recipientPubKey (byte-for-byte equality).
+        for (const out of capturedParams.outputs) {
+            expect(out.recipientPubKey).toBeInstanceOf(Uint8Array);
+            expect(Array.from(out.recipientPubKey)).toEqual(Array.from(DEPOSIT_PUB));
+        }
+    });
+
+    test('depositForOrg_doesNotOverrideBlindingWithZero', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+
+        await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        const capturedParams = generateDepositProof.mock.calls[0][0];
+        // Blinding may be omitted (upstream pads) OR explicitly set to a
+        // random non-zero value. The ONLY forbidden value is 0n (Gotcha 5).
+        for (const out of capturedParams.outputs) {
+            if (out.blinding !== undefined && out.blinding !== null) {
+                expect(out.blinding).not.toBe(0n);
+            }
+        }
+    });
+
+    test('depositForOrg_usesMembershipLeafIndexFromOrgRow', async () => {
+        await seedOrgRow(42);
+        seedCachedKeys();
+
+        await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        const capturedParams = generateDepositProof.mock.calls[0][0];
+        expect(capturedParams.membershipLeafIndex).toBe(42);
+    });
+
+    test('depositForOrg_usesMembershipBlindingZero', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+
+        await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        const capturedParams = generateDepositProof.mock.calls[0][0];
+        expect(capturedParams.membershipBlinding).toBe(0n);
+    });
+
+    test('generateDepositProof_returnsExpectedShape', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+
+        const fakeProof = validProofResult();
+        generateDepositProof.mockResolvedValue(fakeProof);
+
+        await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        // submitDeposit must be called with the proofResult produced by
+        // generateDepositProof (object identity preserved — no mutation).
+        expect(submitDeposit).toHaveBeenCalledTimes(1);
+        expect(submitDeposit).toHaveBeenCalledWith(fakeProof, expect.any(Object));
+
+        // Assert the proof shape the submitDeposit mock was called with has
+        // both sorobanProof and extData (POOL-02 contract).
+        const proofArg = submitDeposit.mock.calls[0][0];
+        expect(proofArg).toHaveProperty('sorobanProof');
+        expect(proofArg).toHaveProperty('extData');
+    });
+
+    test('depositForOrg_writesNoteTagsOnlyAfterSuccess', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+        submitDeposit.mockResolvedValue({
+            success: false,
+            error: 'simulation failed',
+        });
+
+        const result = await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.error).toMatch(/simulation failed/);
+
+        const tags = await listNoteTags('org-gdepos-aaaabbbb');
+        expect(tags).toHaveLength(0);
+    });
+
+    test('depositForOrg_writesNoteTagOnSuccess', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+
+        const result = await depositForOrg({
+            adminAddress: DEPOSIT_ADMIN,
+            amountStroops: 100_0000000n,
+            deployments: DEPOSIT_DEPLOYMENTS,
+            rootsSnapshot: ROOTS_SNAPSHOT,
+            stateManager: {},
+            signerOptions: fakeSignerOptions(),
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.txHash).toBe('fakedeposithash');
+        expect(result.commitments.length).toBeGreaterThanOrEqual(1);
+
+        const tags = await listNoteTags('org-gdepos-aaaabbbb');
+        expect(tags.length).toBeGreaterThanOrEqual(1);
+
+        // All persisted tags must carry the amount and orgId.
+        for (const tag of tags) {
+            expect(tag.orgId).toBe('org-gdepos-aaaabbbb');
+            expect(tag.amount).toBe((100_0000000n).toString());
+            expect(typeof tag.commitment).toBe('string');
+        }
+    });
+
+    test('depositForOrg_neverCallsCallPoolTransact', () => {
+        // Static-source regression guard for Gotcha 1 — the string
+        // 'callPoolTransact' must not appear anywhere in deposit.js. The
+        // jest test runs with cwd=app/ so the relative path is stable.
+        const src = readFileSync('js/enclave/deposit.js', 'utf8');
+        expect(src).not.toMatch(/callPoolTransact/);
+    });
+
+    test('depositForOrg_throwsWhenOrgRowMissing', async () => {
+        seedCachedKeys(); // cached but no DB row
+
+        await expect(
+            depositForOrg({
+                adminAddress: DEPOSIT_ADMIN,
+                amountStroops: 100_0000000n,
+                deployments: DEPOSIT_DEPLOYMENTS,
+                rootsSnapshot: ROOTS_SNAPSHOT,
+                stateManager: {},
+                signerOptions: fakeSignerOptions(),
+            }),
+        ).rejects.toThrow(/No org exists/);
+    });
+
+    test('depositForOrg_throwsWhenKeysNotCached', async () => {
+        await seedOrgRow();
+        // no cached keys
+
+        await expect(
+            depositForOrg({
+                adminAddress: DEPOSIT_ADMIN,
+                amountStroops: 100_0000000n,
+                deployments: DEPOSIT_DEPLOYMENTS,
+                rootsSnapshot: ROOTS_SNAPSHOT,
+                stateManager: {},
+                signerOptions: fakeSignerOptions(),
+            }),
+        ).rejects.toThrow(/session cache/);
+    });
+
+    test('depositForOrg_rejectsNonPositiveAmount', async () => {
+        await seedOrgRow();
+        seedCachedKeys();
+
+        await expect(
+            depositForOrg({
+                adminAddress: DEPOSIT_ADMIN,
+                amountStroops: 0n,
+                deployments: DEPOSIT_DEPLOYMENTS,
+                rootsSnapshot: ROOTS_SNAPSHOT,
+                stateManager: {},
+                signerOptions: fakeSignerOptions(),
+            }),
+        ).rejects.toThrow(/positive BigInt/);
     });
 });
