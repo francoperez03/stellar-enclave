@@ -223,6 +223,84 @@ else
   POOL_ID="$(deploy_contract pool "$POOL_WASM")"
 fi
 
+# ---------------------------------------------------------------------------
+# POOL-06: flip asp-membership AdminInsertOnly to false
+#
+# Phase 1 plan 01-01 requirement. The asp-membership constructor defaults
+# AdminInsertOnly=true (see contracts/asp-membership/src/lib.rs line 93), so
+# only the admin can call insert_leaf. The browser-first Enclave UI needs to
+# call insert_leaf permissionlessly (the per-org admin will have already
+# signed an off-chain policy receipt), so we must flip this flag once at
+# deploy time.
+#
+# Skipped when --skip-init is set (no constructor ran, so AdminInsertOnly is
+# not initialized either).
+# ---------------------------------------------------------------------------
+POOL_ASP_ADMIN_INSERT_ONLY="unknown"
+if [[ "$SKIP_INIT" != "true" ]]; then
+  step "Setting asp-membership admin_insert_only=false (POOL-06)"
+  #
+  # Post-condition verification note:
+  #
+  # The plan (01-01 task 1 step 2) originally wanted a `get_admin_insert_only`
+  # getter call to re-read the flag after flipping it. No such public fn
+  # exists on asp-membership — the only reader is inside `insert_leaf`
+  # (contracts/asp-membership/src/lib.rs line 195). The plan's fallback was
+  # `stellar contract read --key AdminInsertOnly --durability persistent`,
+  # but the stellar CLI 25.x --key flag only accepts symbol-style keys;
+  # `DataKey::AdminInsertOnly` is a `#[contracttype] enum` variant whose
+  # on-chain key is a serialized `Vec<Val>` (ScVec), NOT a symbol. The CLI
+  # returns "no matching contract data entries" for the symbol probe even
+  # though the entry exists. Running `stellar contract read --durability
+  # persistent --id <ASP>` with no --key dumps all entries but uses CSV-ish
+  # text output that is brittle to grep across CLI versions.
+  #
+  # Verification strategy instead: rely on the invoke's exit code. The
+  # `set_admin_insert_only(admin_only)` function has exactly two branches:
+  #   1. admin.require_auth() fails         -> HostError (non-zero exit)
+  #   2. store.set(AdminInsertOnly, flag)   -> unconditional
+  # So a successful invoke IS a proof of the post-condition.
+  #
+  # We record POOL_ASP_ADMIN_INSERT_ONLY="false" on invoke success and trust
+  # the contract body. Phase 1 plan 01-03 will additionally exercise the
+  # permissionless `insert_leaf` path from the browser; that call succeeding
+  # from a non-admin source is the empirical confirmation that this flag
+  # really is false on-chain.
+  if stellar contract invoke \
+      --id "$ASP_MEMBERSHIP_ID" \
+      --source-account "$DEPLOYER" \
+      --network "$NETWORK" \
+      -- set_admin_insert_only --admin_only false >/dev/null; then
+    POOL_ASP_ADMIN_INSERT_ONLY="false"
+  else
+    die "POOL-06 failed: set_admin_insert_only invoke returned non-zero on $ASP_MEMBERSHIP_ID"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# POOL-07: capture the empty asp-non-membership SMT root
+#
+# contracts/asp-non-membership/src/lib.rs line 111 initializes Root to
+# U256::from_u32(0). The stellar CLI returns this as the literal string "0"
+# (not a 64-char hex). We capture it verbatim into deployments.json so the
+# Enclave UI (Phase 1 plan 01-03) can use it as the "no blocklist" default
+# when building the initial deposit proof.
+# ---------------------------------------------------------------------------
+ASP_NON_MEMBERSHIP_EMPTY_ROOT="unknown"
+if [[ "$SKIP_INIT" != "true" ]]; then
+  step "Recording asp_non_membership empty SMT root (POOL-07)"
+  ASP_NON_MEMBERSHIP_EMPTY_ROOT="$(stellar contract invoke \
+      --id "$ASP_NON_MEMBERSHIP_ID" \
+      --source-account "$DEPLOYER" \
+      --network "$NETWORK" \
+      -- get_root 2>/dev/null | tr -d '"' | tr -d '\n' || echo "0")"
+  # Empty SMT root is literally "0" per asp-non-membership::__constructor.
+  # Preserve whatever the CLI returns (stripped of JSON string quotes).
+  if [[ -z "$ASP_NON_MEMBERSHIP_EMPTY_ROOT" ]]; then
+    ASP_NON_MEMBERSHIP_EMPTY_ROOT="0"
+  fi
+fi
+
 cat >&2 <<EOF
 
   ┌─────────────────────────────────────────────────────────────────┐
@@ -230,20 +308,82 @@ cat >&2 <<EOF
   └─────────────────────────────────────────────────────────────────┘
 
 Deployment complete
-  Network:             $NETWORK
-  Deployer:            $DEPLOYER_ADDR
-  Admin:               $ADMIN_ADDR
-  ASP membership:      $ASP_MEMBERSHIP_ID
-  ASP non-membership:  $ASP_NON_MEMBERSHIP_ID
-  Verifier:            $VERIFIER_ID
-  Pool:                $POOL_ID
-  Constructed:         $([[ "$SKIP_INIT" == "true" ]] && echo "no" || echo "yes")
+  Network:                     $NETWORK
+  Deployer:                    $DEPLOYER_ADDR
+  Admin:                       $ADMIN_ADDR
+  ASP membership:              $ASP_MEMBERSHIP_ID
+  ASP non-membership:          $ASP_NON_MEMBERSHIP_ID
+  Verifier:                    $VERIFIER_ID
+  Pool:                        $POOL_ID
+  USDC SAC:                    $TOKEN
+  pool_asp_admin_insert_only:  $POOL_ASP_ADMIN_INSERT_ONLY
+  asp_non_membership_empty_root: $ASP_NON_MEMBERSHIP_EMPTY_ROOT
+  Constructed:                 $([[ "$SKIP_INIT" == "true" ]] && echo "no" || echo "yes")
 EOF
 
-DEPLOY_JSON="$(printf '{"network":"%s","deployer":"%s","admin":"%s","asp_membership":"%s","asp_non_membership":"%s","verifier":"%s","pool":"%s","initialized":%s}\n' \
-  "$NETWORK" "$DEPLOYER_ADDR" "$ADMIN_ADDR" "$ASP_MEMBERSHIP_ID" "$ASP_NON_MEMBERSHIP_ID" "$VERIFIER_ID" "$POOL_ID" \
-  "$([[ "$SKIP_INIT" == "true" ]] && echo false || echo true)")"
-
 # Write deployment summary to a file for easy reuse.
-printf '%s' "$DEPLOY_JSON" > "$SCRIPT_DIR/deployments.json"
-printf '%s' "$DEPLOY_JSON"
+#
+# Schema (Phase 1 plan 01-01):
+#   network, deployer, admin                 — provenance
+#   asp_membership, asp_non_membership,
+#   verifier, pool                           — four live contract IDs
+#   usdc_token_sac                           — --token pass-through (or native XLM)
+#   pool_asp_admin_insert_only               — POOL-06 post-flip state (false)
+#   asp_non_membership_empty_root            — POOL-07 captured empty SMT root ("0")
+#   initialized                              — constructors ran
+need jq
+if [[ "$SKIP_INIT" == "true" ]]; then
+  INIT_FLAG=false
+  # With --skip-init the new fields are not populated; emit placeholders.
+  POOL_ASP_ADMIN_INSERT_ONLY_JSON='null'
+  jq -n \
+    --arg network "$NETWORK" \
+    --arg deployer "$DEPLOYER_ADDR" \
+    --arg admin "$ADMIN_ADDR" \
+    --arg asp_membership "$ASP_MEMBERSHIP_ID" \
+    --arg asp_non_membership "$ASP_NON_MEMBERSHIP_ID" \
+    --arg verifier "$VERIFIER_ID" \
+    --arg pool "$POOL_ID" \
+    --arg usdc "$TOKEN" \
+    --argjson initialized "$INIT_FLAG" \
+    '{
+      network: $network,
+      deployer: $deployer,
+      admin: $admin,
+      asp_membership: $asp_membership,
+      asp_non_membership: $asp_non_membership,
+      verifier: $verifier,
+      pool: $pool,
+      usdc_token_sac: $usdc,
+      pool_asp_admin_insert_only: null,
+      asp_non_membership_empty_root: null,
+      initialized: $initialized
+    }' > "$SCRIPT_DIR/deployments.json"
+else
+  jq -n \
+    --arg network "$NETWORK" \
+    --arg deployer "$DEPLOYER_ADDR" \
+    --arg admin "$ADMIN_ADDR" \
+    --arg asp_membership "$ASP_MEMBERSHIP_ID" \
+    --arg asp_non_membership "$ASP_NON_MEMBERSHIP_ID" \
+    --arg verifier "$VERIFIER_ID" \
+    --arg pool "$POOL_ID" \
+    --arg usdc "$TOKEN" \
+    --arg empty_root "$ASP_NON_MEMBERSHIP_EMPTY_ROOT" \
+    --argjson admin_insert_only false \
+    '{
+      network: $network,
+      deployer: $deployer,
+      admin: $admin,
+      asp_membership: $asp_membership,
+      asp_non_membership: $asp_non_membership,
+      verifier: $verifier,
+      pool: $pool,
+      usdc_token_sac: $usdc,
+      pool_asp_admin_insert_only: $admin_insert_only,
+      asp_non_membership_empty_root: $empty_root,
+      initialized: true
+    }' > "$SCRIPT_DIR/deployments.json"
+fi
+
+cat "$SCRIPT_DIR/deployments.json"
