@@ -1,0 +1,81 @@
+# Explicitly opt this crate OUT of the parent workspace that lives at the
+# repo root. Without this empty `[workspace]` table, cargo's workspace
+# auto-discovery treats the crate as an orphan member of the root workspace
+# and refuses to build. The empty table turns this crate into its own tiny
+# one-crate workspace with its own target dir and its own Cargo.lock —
+# exactly the isolation SETUP-02 calls for.
+[workspace]
+
+[package]
+name = "smoke-fixture-cli"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Standalone crate: NOT a member of the root workspace.
+#
+# Why standalone: SETUP-02 requires zero edits to upstream files, and the
+# root `Cargo.toml` is byte-identical to upstream (the workspace members
+# list has never been touched by Phase 0). Adding `tools/smoke-fixture-cli`
+# to the workspace members would break that invariant. Keeping the crate
+# standalone preserves SETUP-02 compliance.
+#
+# Build: cargo build --manifest-path tools/smoke-fixture-cli/Cargo.toml --release
+# Run:   cargo run   --manifest-path tools/smoke-fixture-cli/Cargo.toml --release -- \
+#          .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-proof.json \
+#          .planning/phases/00-setup-day-1-de-risking/fixtures/smoke-ext-data.json
+
+[[bin]]
+name = "smoke-fixture-cli"
+path = "src/main.rs"
+
+[dependencies]
+# Path-deps into the upstream crates. These pull in the exact same crates the
+# root workspace uses. Versions are resolved via the `[patch.crates-io]` section
+# below, which mirrors the root workspace patches so arkworks git-versions stay
+# consistent with `circuits` and `contracts/pool`.
+circuits                = { path = "../../circuits", default-features = false, features = ["std"] }
+pool                    = { path = "../../contracts/pool" }
+asp-membership          = { path = "../../contracts/asp-membership" }
+asp-non-membership      = { path = "../../contracts/asp-non-membership" }
+circom-groth16-verifier = { path = "../../contracts/circom-groth16-verifier" }
+contract-types          = { path = "../../contracts/types" }
+soroban-utils           = { path = "../../contracts/soroban-utils" }
+zkhash                  = { path = "../../poseidon2" }
+
+# Soroban SDK — must match the version the contracts use.
+# testutils gives us Env::default() + Address::generate() without a live chain.
+soroban-sdk = { version = "25.0.2", features = ["testutils"] }
+
+# Arkworks scalar / field math. These match the workspace versions; actual
+# sources come from the git patches below.
+ark-bn254   = { version = "0.5.0", default-features = false, features = ["curve"] }
+ark-ff      = { version = "0.5.0", default-features = false }
+ark-groth16 = { version = "0.5.0", default-features = false }
+
+num-bigint = { version = "0.4.6", default-features = false }
+
+# Fixture serialization.
+serde_json = "1"
+hex        = "0.4"
+anyhow     = "1"
+
+[profile.release]
+opt-level = 3
+lto       = "thin"
+
+# [patch.crates-io] mirrors the root workspace so arkworks crates resolve to the
+# same git revisions the upstream workspace uses. Without this section, cargo
+# would pull arkworks 0.5.0 from crates.io and the version graph would diverge
+# from `circuits` (which uses the git revisions).
+[patch.crates-io]
+ark-relations         = { git = "https://github.com/arkworks-rs/snark.git" }
+ark-snark             = { git = "https://github.com/arkworks-rs/snark.git" }
+ark-crypto-primitives = { git = "https://github.com/arkworks-rs/crypto-primitives.git" }
+ark-ff                = { git = "https://github.com/arkworks-rs/algebra.git" }
+ark-ec                = { git = "https://github.com/arkworks-rs/algebra.git" }
+ark-poly              = { git = "https://github.com/arkworks-rs/algebra.git" }
+ark-serialize         = { git = "https://github.com/arkworks-rs/algebra.git" }
+ark-bn254             = { git = "https://github.com/arkworks-rs/algebra.git" }
+ark-r1cs-std          = { git = "https://github.com/arkworks-rs/r1cs-std.git" }
+ark-groth16           = { git = "https://github.com/arkworks-rs/groth16.git" }
