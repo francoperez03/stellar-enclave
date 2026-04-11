@@ -1,0 +1,20 @@
+{
+  "name": "@enclave/facilitator",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enclave facilitator HTTP service — shielded proof -> public USDC x402 bridge (Phase 2 target).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@enclave/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  }
+}

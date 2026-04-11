@@ -1,0 +1,20 @@
+{
+  "name": "@enclave/treasury",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enclave treasury CLI — org bootstrap, agent enrollment, deposits (Phase 1 target).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@enclave/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  }
+}

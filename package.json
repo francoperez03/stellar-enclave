@@ -14,8 +14,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "build": "npm run -ws --if-present build",
-    "typecheck": "npm run -ws --if-present typecheck",
+    "build": "npm run -w @enclave/core build && npm run -w @enclave/agent build && npm run -w @enclave/facilitator build && npm run -w @enclave/treasury build && npm run -w @enclave/gate build && npm run -w @enclave/demo build",
+    "typecheck": "npm run -w @enclave/core typecheck && npm run -w @enclave/agent typecheck && npm run -w @enclave/facilitator typecheck && npm run -w @enclave/treasury typecheck && npm run -w @enclave/gate typecheck && npm run -w @enclave/demo typecheck",
     "clean": "npm run -ws --if-present clean"
   },
   "devDependencies": {

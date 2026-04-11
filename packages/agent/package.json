@@ -1,0 +1,20 @@
+{
+  "name": "@enclave/agent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enclave agent SDK — drop-in x402 client with shielded proving (Phase 3 target).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@enclave/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  }
+}
