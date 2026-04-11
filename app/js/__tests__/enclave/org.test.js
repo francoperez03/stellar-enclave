@@ -44,6 +44,18 @@ jest.mock('../../wallet.js', () => ({
     signWalletMessage: jest.fn(),
 }));
 
+// Mock stellar.js::getNetwork so org.js doesn't pull in the real module
+// (which eagerly destructures SDK exports that our SDK mock doesn't provide).
+jest.mock('../../stellar.js', () => ({
+    __esModule: true,
+    getNetwork: jest.fn(() => ({
+        name: 'testnet',
+        horizonUrl: 'https://horizon-testnet.stellar.org',
+        rpcUrl:     'https://soroban-testnet.stellar.org',
+        passphrase: 'Test SDF Network ; September 2015',
+    })),
+}));
+
 import 'fake-indexeddb/auto';
 import { createOrg } from '../../enclave/org.js';
 import {
