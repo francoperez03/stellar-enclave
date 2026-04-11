@@ -235,8 +235,15 @@ function compute_nullifier(_commitment, _pathIndices, _signature) {
   return new Uint8Array(32);
 }
 
+// Deterministic non-zero blinding for jest tests. The real WASM RNG
+// returns cryptographically-random bytes (vanishingly unlikely to be
+// all-zero), and Gotcha 5 forbids a zero blinding on output notes. We
+// seed mulberry32 from a counter that rotates on each call so repeated
+// invocations within one test produce distinct 32-byte values.
+let _blindingCounter = 0;
 function generate_random_blinding() {
-  return new Uint8Array(32);
+  _blindingCounter = (_blindingCounter + 1) >>> 0;
+  return derivedBytes(32, 'generate_random_blinding', _blindingCounter);
 }
 
 function convert_proof_to_soroban(_proofBytes) {
