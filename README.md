@@ -1,164 +1,85 @@
-# Private Payments for Stellar
+# Enclave — Shielded Organizations for Agentic Commerce
 
-[![Docs](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/docs.yml/badge.svg)](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/docs.yml)
-[![Lint](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/linter.yml/badge.svg)](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/linter.yml)
-[![Build](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/build-and-test.yml)
-[![Dependencies](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/dependency-audit.yml/badge.svg)](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/dependency-audit.yml)
-[![UB](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/ub-detection.yml/badge.svg)](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/ub-detection.yml)
-[![Coverage](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/coverage.yml/badge.svg)](https://github.com/NethermindEth/stellar-private-payments/actions/workflows/coverage.yml)
+> **Status:** Proof of Concept built for the Stellar Agentic Hackathon 2026. Testnet only. Not audited. Not for production.
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+Enclave is a multi-tenant private treasury layer for autonomous agents on Stellar. Organizations deploy shielded treasuries inside a single shared privacy pool, their agents pay for x402 API services without leaking treasury balance or supplier relationships, and a facilitator bridges shielded proofs to public USDC settlement so existing x402 endpoints don't need to change.
 
-> **Disclaimer**: This project is a **Proof of Concept (PoC)** and prototype implementation. It is intended for research and educational purposes only. The code has not been audited and should not be used in production environments with real assets.
+## Architecture (one sentence)
 
-A privacy-preserving payment system for the Stellar network using zero-knowledge proofs. This implementation enables users to deposit, transfer, and withdraw tokens while maintaining transaction privacy through Groth16 proofs.
+**Shared on-chain ASP, per-org policy enforced off-chain.** One shared privacy pool + one shared membership set on-chain gives every organization the maximum anonymity set. Per-organization spending rules, caps, and audit trails are enforced by the facilitator off-chain. An organization is a policy over a shared membership set — not an on-chain anonymity set of its own.
 
-The system incorporates **Association Set Provider (ASPs)** as a control mechanism to provide illicit activity safeguards through association sets. ASPs maintain membership and non-membership Merkle trees that allow proving whether specific deposits are part of approved or blocked sets, enabling pool operators to enforce administrative controls without compromising user privacy.
+This is a deliberate architectural lock. Per-org on-chain ASPs are technically infeasible on the current pool contract (the pool hard-codes one ASP root; see `PITFALLS.md §1`). Ship-ready designs for per-org on-chain ASPs are deferred to v2 (Approach B).
 
-## Features
+## What's in the box
 
-- **Private Payments**: Deposit, transfer, and withdraw tokens without revealing transaction amounts or sender/receiver relationships
-- **Zero-Knowledge Proofs**: Groth16 proofs generated via Circom circuits
-- **Administrative Controls**: ASP-based membership and non-membership proofs for illicit activity safeguards
-- **Browser-Based Proving**: Client-side proof generation using WebAssembly
-- **Stellar Integration**: Built on Soroban smart contracts
+- **@enclave/treasury** — CLI for org admins: bootstrap org, derive shared org spending key, deposit testnet USDC, enroll agent members (off-chain).
+- **@enclave/agent** — Node-runnable SDK: `agent.fetch(url)` drop-in x402 client that produces shielded proofs using the shared org key.
+- **@enclave/facilitator** — HTTP service: verifies shielded proofs on-chain, relays `pool.transact()` (meta-tx model, pays XLM gas from its float), settles USDC via x402.
+- **@enclave/gate** — `withEnclaveGate({ orgId })` Next.js middleware: gates an HTTP endpoint by ZK membership in a given org.
+- **@enclave/demo** — Next.js app hosting the gated demo endpoint.
 
-## Demo Application
-The demo application consists on three main parts:
-- **Frontend**: Provides a nice user interface for interacting with the system. 
-- **Circuits**: Where the real zk-magic happens and constraints are defined.
-- **Smart Contracts**: They define the state of the system, and how transactions are processed.
-The Frontend includes the [user-facing part](#transaction-flow) and an example of an [ASP admin page](#asp-admin-page) which will be separated according to roles in the main application
+## Quickstart
 
-If you want to try it out:
+> Full setup requires Stellar CLI, Rust 1.92.0, and Node 22 LTS. The hackathon demo runs on Stellar testnet with testnet USDC. Follow the phased setup in `.planning/ROADMAP.md` — or the highlights below.
 
-1. Install dependencies
-    ```bash
-      make install
-    ``` 
-   
+```bash
+# 1. Install Rust 1.92.0 (pinned via rust-toolchain.toml)
+rustup show
 
-2. Compile the project, including circuit tests:
-    ```bash
-      make circuits-build # or BUILD_TESTS=1 cargo build
-    ```
-   
+# 2. Build upstream contracts + circuits + prover WASM (Rust side)
+make circuits-build
 
-3. Deploy the contracts to a Stellar network:
-    ```bash
-    ./scripts/deploy.sh <network> \                     # e.g. testnet
-      --deployer <identity> \                           # Must be added in stellar-cli keys
-      --asp-levels 10 \                                 # Number of levels in the ASP trees
-      --pool-levels 10 \                                # Number of levels in the pool Merkle tree
-      --max-deposit 1000000000 \                        # Maximum deposit amount (in Stroops)
-      --vk-file scripts/testdata/policy_test_vk.json # Verification key file
-    ```
-   If you already have deployed contracts, make sure their addresses are updated in `scripts/deployments.json`.
+# 3. Install Node workspaces (facilitator, treasury, agent SDK, gate, demo)
+nvm use       # reads .nvmrc (Node 22)
+npm install
+npm run build
 
-4. Serve frontend
-    ```bash
-      make serve
-    ```
-    Open `http://localhost:8080` in your browser. You might want to open the console (_Shift + Ctrl + I_) to see the logs.
-    You might need to delete the browser cache from previous runs. Go to `Application` -> `Clear storage`.
+# 4. Deploy upstream contracts to testnet (one-time per fork)
+./scripts/deploy.sh testnet \
+  --deployer <your-stellar-identity> \
+  --asp-levels 10 \
+  --pool-levels 10 \
+  --max-deposit 1000000000 \
+  --vk-file scripts/testdata/policy_test_vk.json
 
+# 5. Smoke-test the deployed pool
+scripts/smoke-test.sh
 
-5. The pool is ready to use. But you will need to populate the ASP membership smart contracts with some public keys. You can do it directly from the stellar-cli:
-    ```bash
-    stellar contract invoke --id <CONTRACT_ADDRESS> --source-account <ASP_ADMIN_ACCOUNT> -- insert_leaf --leaf <LEAF_VALUE> # See circuit for leaf format
-    ```
-    Or, directly access `http://localhost:8080/admin.html` and use the UI to add public keys.
-    Please note that the admin UI allows deriving keys for ANY account.
-    But insertion MUST be signed by the ASP admin account.
-    You can add your Freighter account to your Stellar-cli keys with `stellar keys add <NAME_FOR_ACCOUNT> --seed-phrase`.
-    This will prompt you to type your seed phrase and will enable you to deploy contracts with the same account you have on your browser wallet.
+# 6. Verify upstream license hygiene
+scripts/check-upstream.sh
+```
 
+## Demo video
 
-6. Go back to `http://localhost:8080` and try it out!
+A ≤3-minute video demo is recorded on 2026-04-15 (rehearsal) and 2026-04-16 (final). See the DoraHacks submission for the link.
 
-### Architecture Overview
+**Pre-generated proofs note (honest disclosure):** The recorded demo uses pre-generated proofs from `demo/fixtures/` rather than live proof generation during the video. This is documented honestly because live proving may exceed the video's pacing budget.
 
-#### Transaction Flow
-![Deposit Page](assets/demo-001.png)
+## Credits
 
-1. **Deposit**: User deposits tokens into the pool, creating a commitment (UTXO). No input notes are spent, creates output notes.
-2. **Withdraw**: User proves ownership of commitments and withdraws tokens. Inputs notes are spent, no output notes are created.
-3. **Transfer**: User spends existing commitments and creates new ones, all done privately.  Input notes are spent, and output notes under a new public key are created.
-4. **Transact**: Enables advanced users with experience on privacy-preserving protocols to generate their own transactions. Spending, creating and transferring notes at will.
+Enclave is a fork of [NethermindEth/stellar-private-payments](https://github.com/NethermindEth/stellar-private-payments), originally authored by the Stellar Development Foundation and maintained by Nethermind. Copyright for the upstream code remains with its original authors. Enclave adds a new product layer (treasury, facilitator, SDK, gate, demo) on top of the upstream shielded pool + circuits + prover without modifying any upstream source.
 
-#### ASP Admin Page
-![ASP Admin Page](assets/demo-002.png)
+The upstream project's original README is captured in the project history — see the [upstream repo](https://github.com/NethermindEth/stellar-private-payments) for the original "Private Payments for Stellar" narrative, architecture docs, and per-contract documentation.
 
-This is the administrative control panel for managing the **Association Set Provider (ASP)** membership trees. It allows you to:
-
-1. **Add/insert public keys** to the ASP membership tree - Controls which public keys are approved
-2. **Manage the exclusion list** - Block specific public keys via the non-membership Merkle tree
-3. **Derive keys** for accounts - Generate derived keys for any account (though insertion must be signed by the ASP admin account)
-
-This provides **illicit activity safeguards** while maintaining user privacy. The ASP membership trees work with the zero-knowledge proofs to prove that deposits either belong to approved accounts or don't belong to blocked accounts—without compromising privacy. To access the ASP Admin Page, go to `http://localhost:8080/admin.html`
-
-The admin has the option of toggling the "Admin-Only Leaf Insert", It's enabled by default which restricts only the admin to insert membership leaves but when disabled by the admin, anyone can insert membership leaves.
-
-> **WARNING:** Disabling "Admin-Only Leaf Insert" removes the access-control safeguard on the ASP membership tree. Any party will be able to add themselves (or others) to the approved set without admin approval, bypassing the intended illicit-activity safeguards. Only disable this in a controlled demo or testing environment—never in production.
-
-
-#### Zero-Knowledge Circuits
-
-The main transaction circuit proves:
-- Ownership of input UTXOs (knowledge of private keys)
-- Correct nullifier computation (prevents double-spending)
-- Valid Merkle proofs for input commitments
-- Correct output commitment computation
-- Balance conservation (inputs = outputs + public amount)
-- ASP membership/non-membership proofs
-
-#### Smart Contracts
-
-- **Pool**: Main contract handling deposits, transfers, and withdrawals
-- **Circom Groth16 Verifier**: On-chain verification of ZK proofs
-- **ASP Membership**: Merkle tree of approved public keys
-- **ASP Non-Membership**: Sparse Merkle tree for exclusion proofs
-
-## Limitations
-
-As a proof of concept, this implementation has several limitations:
-
-- **No Groth16 Ceremony**: The Common Reference String (CRS) was not generated doing a decentralized ceremony.
-- **Single circuit support**: Now the demo only showcases a single circuit (2 inputs, 2 outputs). Support for multiple circuits might be added in the future.
-- **No Stellar Events**: The demo relies heavily on Stellar events. But RPC nodes only store events for a small retention window (7 days). This means that the demo will not work for longer periods of time. It requires a dedicated indexer serving events to users.
-- **Decimal support**: Demo supports Stroops, so it should be able to handle XLM deposits with decimal amounts. But this has not been tested in the UI.
-- **Not Audited**: The code has not undergone security audits.
-- **Error Handling**: Error handling may not cover all edge cases.
-
-
-## AI tools disclosure
-The content published here may have been refined/augmented by the use of large language models (LLM), computer programs designed to comprehend and generate human language. However, any output refined/generated with the assistance of such programs has been reviewed, edited and revised by Nethermind.
-
+**"Nethermind" is not used as a trademark in the Enclave project name, pitch, or branding.** Upstream credit is given by attribution; no affiliation, endorsement, or partnership is implied.
 
 ## License
 
-This repository contains **source code** provided under a mixed license structure (Apache 2.0 and GPLv3).
+Enclave is distributed under the same license as its upstream source: **Apache License 2.0**. See `LICENSE` at the repo root. The license file, `circuits/LICENSE`, and (if present) `NOTICE` are preserved byte-identical to upstream — enforced by `scripts/check-upstream.sh` which runs `git diff upstream/main -- LICENSE NOTICE circuits/LICENSE`.
 
-Most of the source code is licensed under the Apache License, Version 2.0. See `LICENSE` for details.
+**LGPLv3 obligation:** The `poseidon2/` crate is forked from [HorizenLabs/poseidon2](https://github.com/HorizenLabs/poseidon2) which is licensed under LGPLv3. Any redistribution of binaries linking the `poseidon2` crate must comply with LGPLv3's source-availability requirements. Enclave does not relicense, repackage, or remove LGPL notices from that crate.
 
-The exception is `circuits/build.rs` which is licensed separately under the GNU Lesser General Public License v3.0. See `circuits/LICENSE` for details.
+This project is a **Proof of Concept**. It has not been audited and must not be used in production environments with real assets.
 
-### Responsibility of Deployers
+## Phase 0 hygiene
 
-The `dist/` directory and its contents (including compiled WebAssembly circuits, keys, and bundled JavaScript) are **generated artifacts** produced by the build process. They are not checked into this repository.
+- `scripts/check-upstream.sh` — verifies LICENSE, NOTICE, circuits/LICENSE match upstream/main
+- `.gitignore` — blocks `*.key`, `*.pem`, `.env*`, `secrets/`, `wallets/`, `deployments-local.json`, `fixtures/*.secret.*`
+- Phase 0 secrets scan report: `.planning/phases/00-setup-day-1-de-risking/00-01-SECRETS-SCAN.md`
+- Prover benchmark + POOL-08 null-input finding: `docs/benchmarks.md`
 
-If you compile, build, or deploy this project (e.g., hosting the `dist/` folder on a web server), **you become the distributor** of those binary artifacts. It is your responsibility to:
-1.  Ensure all generated artifacts comply with their respective licenses (specifically the LGPLv3 requirements for compiled circuits).
-2.  Include the appropriate `LICENSE` and `NOTICE` files in your deployment directory.
-3.  Make the source code available to your end-users as required by the LGPLv3 (if you are distributing the compiled circuits).
+## Roadmap (post-hackathon, v2)
 
-The maintainers of this repository provide the source code "as is" and assume no responsibility for the downstream builds or deployments.
-
-## Would like to contribute?
-
-See [Contributing](./CONTRIBUTING.md).
-
-## Credit
-
-Credit goes to Horizen Labs for their [Poseidon2 implementation](https://github.com/HorizenLabs/poseidon2), which is integrated into this repository.
-
+- **Approach B** — Per-org on-chain ASPs via pool-contract + circuit changes (requires CRS regeneration)
+- **Approach C** — Facilitator decentralization (threshold signing, reputation)
+- **Approach D** — Autonomous treasury policies (on-chain spend caps, agent key rotation)
