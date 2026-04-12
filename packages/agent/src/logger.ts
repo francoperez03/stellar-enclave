@@ -1,8 +1,33 @@
-// Phase 3 Plan 02 target — real pino logger with redact paths
-export const logger = {
-  info: (_obj: unknown, _msg?: string) => {},
-  warn: (_obj: unknown, _msg?: string) => {},
-  error: (_obj: unknown, _msg?: string) => {},
-  debug: (_obj: unknown, _msg?: string) => {},
-};
-export type Logger = typeof logger;
+// Structured logger with automatic redaction of secret fields.
+// SDK-06: no key material, nullifiers, or raw proof bytes survive the log pipeline.
+
+import pino from 'pino';
+import type { Logger as PinoLogger } from 'pino';
+
+const REDACT_PATHS = [
+  'orgSpendingPrivKey',
+  'agentAuthKey',
+  '*.orgSpendingPrivKey',
+  '*.agentAuthKey',
+  'proof.a',
+  'proof.b',
+  'proof.c',
+  'inputNullifiers',
+  'extData',
+  'bundle.orgSpendingPrivKey',
+  'bundle.agentAuthKey',
+];
+
+export function createLogger(stream?: NodeJS.WritableStream): PinoLogger {
+  const opts = {
+    level: process.env['LOG_LEVEL'] ?? 'info',
+    redact: {
+      paths: REDACT_PATHS,
+      censor: '[Redacted]',
+    },
+  };
+  return stream ? pino(opts, stream) : pino(opts);
+}
+
+export const logger: PinoLogger = createLogger();
+export type Logger = PinoLogger;
