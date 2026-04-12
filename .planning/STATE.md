@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 01-pool-integration-multi-org-namespace
-current_plan: Not started
-status: planning
-stopped_at: Completed 02-facilitator-bridge Phase 2 (02-08-PLAN.md) — all plans done, live e2e deferred to Phase 3
-last_updated: "2026-04-12T14:36:10.668Z"
+current_phase: 03-agent-sdk-enclave-agent
+current_plan: 03
+status: in_progress
+stopped_at: Completed 03-agent-sdk-enclave-agent Plan 02 (config loader + pino logger SDK-05/SDK-06)
+last_updated: "2026-04-12T21:09:14.598Z"
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 24
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Session State
@@ -23,17 +23,19 @@ See: .planning/PROJECT.md
 ## Position
 
 **Milestone:** v1.0 milestone
-**Current phase:** 01-pool-integration-multi-org-namespace
-**Current Plan:** Not started
-**Total Plans in Phase:** 4
-**Status:** Ready to plan
+**Current phase:** 03-agent-sdk-enclave-agent
+**Current Plan:** 03 (Wave 1 — WASM prover wrapper, RED committed in 320b3f7)
+**Total Plans in Phase:** 5
+**Status:** In Progress — plans 03-01 (infra + stubs) and 03-02 (config + logger) complete; 03-03/04/05 remaining
 
 ## Progress
 
 Phase 00-setup-day-1-de-risking: [██████████] 100% (5/5 plans) ✓
-Phase 01-pool-integration-multi-org-namespace: [██░░░░░░░░] 25% (1/4 plans)
+Phase 01-pool-integration-multi-org-namespace: [██████████] 100% (4/4 plans) ✓
+Phase 02-facilitator-bridge: [██████████] 100% (8/8 plans) ✓
+Phase 03-agent-sdk-enclave-agent: [████░░░░░░] 40% (2/5 plans)
 
-Overall milestone: 1/7 phases complete.
+Overall milestone: 3/7 phases complete, 18/24 plans complete.
 
 ## Performance Metrics
 
@@ -56,6 +58,7 @@ Overall milestone: 1/7 phases complete.
 | Phase 02-facilitator-bridge P07 | 90min | 3 tasks | 12 files |
 | Phase 02-facilitator-bridge P08 | 45min | 2 tasks | 8 files |
 | Phase 02-facilitator-bridge P08 | ~45min | 3 tasks | 8 files |
+| Phase 03-agent-sdk-enclave-agent P02 | 2 min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -114,6 +117,9 @@ Overall milestone: 1/7 phases complete.
 - [Phase 02-facilitator-bridge]: Bootstrap CLI uses raw 32-byte Ed25519 seed (mode 0o600) per CONTEXT.md D4; friendbot + Horizon balance read via injectable fetchFn
 - [Phase 02-facilitator-bridge]: Live e2e is DEFERRED — Phase 3 agent SDK must produce wallets/circuits/fixtures/e2e-proof.json before E2E_TESTNET=1 run is possible
 - [Phase 02-facilitator-bridge]: Demo lock uses canonical file mapping as fallback so tests pass even when spec files don't mention FACIL-* IDs explicitly
+- [Phase 03-agent-sdk-enclave-agent]: Pino redact paths array lock (11 entries): flat + wildcards + bundle.* variants for defense against logger.info({ bundle }) leaks. censor: '[Redacted]' sentinel for uniform test assertions.
+- [Phase 03-agent-sdk-enclave-agent]: createLogger(stream?) factory pattern for pino — DI-friendly test capture via Writable stream; production uses bare logger singleton. Keeps stdout untouched by tests.
+- [Phase 03-agent-sdk-enclave-agent]: Workspace jest invocation must run from package dir (cd packages/agent && npx jest) — repo-root invocation picks up app/babel.config.cjs which breaks TS parsing. Future plans should use 'npm -w @enclave/agent test'.
 
 ## Blockers
 
@@ -127,10 +133,11 @@ None.
 - 2026-04-11: Completed 00-04-PLAN.md (testnet smoke test + Pitfall-14 gate, Option A deploy reuse) — 3 tasks, 3 commits (`a31bb18`, `7005763`, `a9a2df6`). SETUP-05 GREEN. `smoke-test.sh` gate=GREEN against live deploy. Day-1 Kill Switch (a) defused by empirical observation. Ready for 00-05.
 - 2026-04-11: Completed 00-05-PLAN.md (prover benchmark + POOL-08 resolution) — 3 tasks, 3 commits (`60be4f0`, `b82b20c`, `fad5279`). SETUP-06 + POOL-08 GREEN. Node WASM prover 2753 ms < 3000 ms budget. POOL-08 H4 confirmed empirically. Day-1 Kill Switch (b) defused. **Phase 0 COMPLETE** — both kill switches (a) and (b) DEFUSED, all 10 Phase-0 requirements GREEN. Ready for Phase 1.
 - 2026-04-11: Completed 01-01-PLAN.md (deploy-admin-gate: Branch B fresh redeploy + POOL-06/07 wiring + preflight + seeder) — ~50 min, 3 tasks, 3 commits (`ce7154d`, `05c5ac2`, `5744342`). POOL-01 + POOL-05 + POOL-06 + POOL-07 GREEN. Fresh deploy under mikey (pool=`CBTP7PJJ...`, asp-m=`CCH2FMMQ...`, asp-nm=`CCUT3PSE...`, verifier=`CBV7OHVP...`). AdminInsertOnly=false verified by invoke exit code. Empty SMT root captured = `"0"`. `scripts/preflight.sh pool-ttl-bump` wraps extend for all 4 contracts (default 535680 ledgers / ~30d). `scripts/seed-demo-accounts.sh` generated fresh `user` identity (`GAJXKNJC...`), friendbot-funded, USDC classic trustlines ensured on both mikey + user. mikey has 0 USDC (Circle web-faucet drip pending before recording day). Ready for 01-02.
+- 2026-04-12: Completed 03-02-PLAN.md (config loader + pino logger — SDK-05 + SDK-06) — ~2 min, 2 tasks, 3 commits (`593ecfb` Task 1 inherited from prior session, `8fc22c9` Task 2 RED failing tests, `79d5e43` Task 2 GREEN pino impl). 7/7 logger redaction assertions pass GREEN covering orgSpendingPrivKey/agentAuthKey/proof.a-c/inputNullifiers/extData. Locked redact paths array (11 entries) with wildcard + nested variants. Next: 03-03 (WASM prover wrapper — RED already committed in `320b3f7`).
 
 ## Session
 
-**Last session:** 2026-04-12T14:17:40.659Z
-**Stopped at:** Completed 02-facilitator-bridge Phase 2 (02-08-PLAN.md) — all plans done, live e2e deferred to Phase 3
+**Last session:** 2026-04-12T21:09:11.980Z
+**Stopped at:** Completed 03-agent-sdk-enclave-agent Plan 02 (config loader + pino logger SDK-05/SDK-06)
 **Resume file:** None
-**Next action:** Begin 01-02 (`/gsd:execute-phase 1`) — next plan is multi-org namespacing (ORG_ID scoping on asp-membership + pool). Manual step before recording day: mikey USDC faucet drip at `https://faucet.circle.com/`, then re-run `scripts/seed-demo-accounts.sh` to complete the 1000 USDC transfer to user.
+**Next action:** Execute 03-03-PLAN.md (Wave 1 — WASM prover wrapper via createRequire, prove() returning 128-byte proof, derivePublicKey — SDK-02, SDK-03, SDK-04). RED tests already committed in `320b3f7`. Downstream: 03-04 (witness inputs / Model X), 03-05 (fetch interceptor + note selector + createAgent wiring).
