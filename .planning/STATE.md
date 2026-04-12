@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
 current_plan: 5
-status: executing
-stopped_at: Completed 03-agent-sdk-enclave-agent/03-04-PLAN.md (buildWitnessInputs Model X — SDK-07 green, 9/9 witness tests + e2e-proof.json fixture generated)
-last_updated: "2026-04-12T21:24:10.510Z"
+status: verifying
+stopped_at: Completed 03-05-PLAN.md (fetch interceptor + createAgent — SDK-01 complete, 10/10 interceptor + 6/6 note-selector tests green, 38/38 agent suite, Phase 3 READY FOR VERIFICATION)
+last_updated: "2026-04-12T21:50:18.477Z"
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Session State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md
 **Current phase:** 03-agent-sdk-enclave-agent
 **Current Plan:** 5
 **Total Plans in Phase:** 5
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Progress
 
@@ -62,6 +62,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 | Phase 03-agent-sdk-enclave-agent P01 | ~60 min | 2 tasks | 13 files |
 | Phase 03-agent-sdk-enclave-agent P03 | 4 min | 1 tasks | 1 files |
 | Phase 03-agent-sdk-enclave-agent P04 | 3 min | 1 tasks | 4 files |
+| Phase 03-agent-sdk-enclave-agent P05 | 9 min | 2 tasks | 7 files |
 
 ## Decisions
 
@@ -135,6 +136,10 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 03-04]: wallets/* gitignore pattern with !wallets/circuits/ exception permits committing public proof fixtures while preserving Day-1 key-material protection (*.enclave.json / *-notes.json still ignored)
 - [Phase 03-04]: e2e-proof.json fixture generated via live Node WASM prover (2608 ms, 128-byte Groth16) with enriched shape: decomposed proof.{a,b,c} + compressed + 352-byte publicInputs — unblocks Phase 2 deferred testnet e2e without regeneration
 - [Phase 03-04]: TypeScript strict tsc enforcement caught ts-jest permissive mode gap: direct cast to Record[string, unknown] allowed by ts-jest but rejected by strict tsc (TS2352, missing index signature). Use double-cast through unknown for test-only shape assertions.
+- [Phase 03-05]: DI for proverDeps — ESM jest.spyOn on frozen module namespace throws TypeError; passing { prove, loadProverArtifacts } via config is the escape hatch for mock-friendly tests
+- [Phase 03-05]: hashExtData duplicated into packages/agent/src/utils/ rather than re-exported from @enclave/core — keeps core dep-light; agent owns @noble/hashes + @stellar/stellar-sdk deps for independent keccak(XDR ScMap) port
+- [Phase 03-05]: Greedy smallest-sufficient note selection (not largest-first) — resolves plan internal contradiction (docstring vs behavior spec); minimizes change-output size, predictable for demo
+- [Phase 03-05]: Wire format locked: paymentPayload wrapper (C1) + scheme='shielded-exact' + flat proof.a/b/c hex (C3) + snake_case extData (C2); response field is 'transaction' not 'txHash' (C5); 409 = already_spent (C6); Authorization Bearer <authKey> on /settle (M3)
 
 ## Blockers
 
@@ -153,7 +158,7 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T21:24:04.121Z
-**Stopped at:** Completed 03-agent-sdk-enclave-agent/03-04-PLAN.md (buildWitnessInputs Model X — SDK-07 green, 9/9 witness tests + e2e-proof.json fixture generated)
+**Last session:** 2026-04-12T21:50:18.475Z
+**Stopped at:** Completed 03-05-PLAN.md (fetch interceptor + createAgent — SDK-01 complete, 10/10 interceptor + 6/6 note-selector tests green, 38/38 agent suite, Phase 3 READY FOR VERIFICATION)
 **Resume file:** None
 **Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).

@@ -52,7 +52,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 
 ### Agent SDK (`@enclave/agent`)
 
-- [ ] **SDK-01**: An agent can be instantiated from an org's derived agent key and used as a drop-in HTTP client (e.g., `agent.fetch(url)`) that transparently handles x402 402-challenge → proof-generation → retry
+- [x] **SDK-01**: An agent can be instantiated from an org's derived agent key and used as a drop-in HTTP client (e.g., `agent.fetch(url)`) that transparently handles x402 402-challenge → proof-generation → retry
 - [x] **SDK-02**: The SDK produces a shielded payment proof compatible with the existing `policy_tx_2_2` circuit layout — no public input layout changes
 - [x] **SDK-03**: The SDK loads proving artifacts (proving key, witness calculator) from a configurable local path and never fetches them over the network at runtime
 - [x] **SDK-04**: The SDK has a Node-runnable proving path (either Node WASM or Playwright-driven Chromium fallback, as determined by SETUP-06)
@@ -182,7 +182,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | FACIL-06 | Phase 2 | Complete |
 | FACIL-07 | Phase 2 | Complete |
 | FACIL-08 | Phase 2 | Complete |
-| SDK-01 | Phase 3 | Pending |
+| SDK-01 | Phase 3 | Complete |
 | SDK-02 | Phase 3 | Complete |
 | SDK-03 | Phase 3 | Complete |
 | SDK-04 | Phase 3 | Complete |

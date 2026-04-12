@@ -60,7 +60,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 - [ ] **Phase 0: Setup & Day-1 De-risking** — Lock narrative, run smoke test, benchmark prover, verify TTL, preserve license, scan for secrets.
 - [x] **Phase 1: Pool Integration & Multi-Org Namespace** — Wire existing pool, model orgs as off-chain namespaces, implement org bootstrap + enrollment + pre-funding. (completed 2026-04-12)
 - [x] **Phase 2: Facilitator Bridge** — Build the shielded-proof → USDC x402 settlement service with replay protection, policy enforcement, and `/health`. (completed 2026-04-12)
-- [ ] **Phase 3: Agent SDK (`@enclave/agent`)** — Ship the Node-runnable agent client with proving, key hygiene, and structured logging.
+- [x] **Phase 3: Agent SDK (`@enclave/agent`)** — Ship the Node-runnable agent client with proving, key hygiene, and structured logging. (completed 2026-04-12)
 - [ ] **Phase 4: Enclave Gate Middleware + Gated Endpoint** — Add the `withEnclaveGate` middleware, one gated demo endpoint, and the enrollment-freeze discipline.
 - [ ] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL cron, cached demo fixtures.
 - [ ] **Phase 6: Demo Recording + Submission** — Rehearsal, final recording, README, DoraHacks writeup, submission.
@@ -141,11 +141,11 @@ If ANY of these fail on day 1, the scope pivots the same morning:
   4. The Node-runnable proving path works end-to-end against a real facilitator — either Node WASM or Playwright-driven Chromium, per the Phase-0 benchmark decision (SDK-04).
   5. Agent private keys (auth keys + the shared org spending key) live in env vars or local files outside the repo; `.gitignore` blocks `*.key`, `.env`, `secrets/`, `wallets/`; structured logs auto-redact keys, nullifiers, and raw payloads and a redaction test confirms no secret survives the pipeline (SDK-05, SDK-06).
 **Plans**: 5 plans across 4 waves (wave 0 scaffold → wave 1 config+logger+prover → wave 2 witness → wave 3 fetch+wiring)
-- [ ] 03-01-PLAN.md — Wave 0: Jest + ts-jest scaffold, all source module stubs, types (EnclaveNote/AgentBundle/ExtData/EnclavePaymentError), .gitignore additions
-- [ ] 03-02-PLAN.md — Wave 1: config loader (ENCLAVE_BUNDLE_PATH/NOTES_PATH/PROVING_ARTIFACTS_PATH), pino logger with redact paths (SDK-05, SDK-06)
-- [ ] 03-03-PLAN.md — Wave 1: WASM prover wrapper via createRequire, prove() returning 128-byte proof, derivePublicKey (SDK-02, SDK-03, SDK-04)
-- [ ] 03-04-PLAN.md — Wave 2: buildWitnessInputs() Model X — inPrivateKey[0]==[1]==orgSpendingPrivKey, blinding=0 (SDK-07)
-- [ ] 03-05-PLAN.md — Wave 3: fetch interceptor 402->prove->settle->retry pipeline, note selector, fixture mode, createAgent() wiring (SDK-01)
+- [x] 03-01-PLAN.md — Wave 0: Jest + ts-jest scaffold, all source module stubs, types (EnclaveNote/AgentBundle/ExtData/EnclavePaymentError), .gitignore additions
+- [x] 03-02-PLAN.md — Wave 1: config loader (ENCLAVE_BUNDLE_PATH/NOTES_PATH/PROVING_ARTIFACTS_PATH), pino logger with redact paths (SDK-05, SDK-06)
+- [x] 03-03-PLAN.md — Wave 1: WASM prover wrapper via createRequire, prove() returning 128-byte proof, derivePublicKey (SDK-02, SDK-03, SDK-04)
+- [x] 03-04-PLAN.md — Wave 2: buildWitnessInputs() Model X — inPrivateKey[0]==[1]==orgSpendingPrivKey, blinding=0 (SDK-07)
+- [x] 03-05-PLAN.md — Wave 3: fetch interceptor 402->prove->settle->retry pipeline, note selector, fixture mode, createAgent() wiring (SDK-01)
 
 **Cut decision if Phase 3 slips:** Ship the SDK with Playwright-only proving (drop the Node WASM path), apply cut 5 (pre-generated proofs for the video). The drop-in `agent.fetch(url)` API is non-negotiable — even if proofs are cached, the call site in the demo must look like "agent calls fetch, payment happens". If the SDK is fundamentally broken, the demo replaces `agent.fetch` with a shell script that posts a pre-built proof to the facilitator; the narrative drops "autonomous agent" and becomes "programmatic client".
 
