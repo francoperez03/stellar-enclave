@@ -12,3 +12,5 @@ export type {
 } from "./types.js";
 
 export { TREE_DEPTH, SMT_DEPTH, BN256_MOD } from "./constants.js";
+
+export * from "./types/facilitator.js";
