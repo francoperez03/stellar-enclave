@@ -64,7 +64,8 @@ ceremony/
 .env.local
 .env.*.local
 secrets/
-wallets/
+wallets/*
+!wallets/circuits/
 deployments-local.json
 fixtures/*.secret.*
 
