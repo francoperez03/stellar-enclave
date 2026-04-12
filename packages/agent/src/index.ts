@@ -1,24 +1,27 @@
-// @enclave/agent — Phase 3 target. Drop-in x402 client with shielded proving.
-// Phase 0: stub only. Real implementation depends on SETUP-06 benchmark winner
-// (Node WASM vs Playwright fallback) — see docs/benchmarks.md after Plan 05.
+// @enclave/agent — Phase 3 implementation.
+// Wave 0: types + stubs. Plans 02-05 replace the stub bodies.
 
-import type { OrgSpendingPubKey, AgentAuthKey, ShieldedProof } from "@enclave/core";
-
-export const PHASE_0_STUB = true;
+export { EnclavePaymentError } from './types.js';
+export type { EnclaveNote, AgentBundle, FixtureEntry, FixtureIndex, ExtData } from './types.js';
+export type { ShieldedProof, PaymentRequest } from '@enclave/core';
 
 export type AgentConfig = {
-  orgSpendingPubKey: OrgSpendingPubKey;
-  authKey: AgentAuthKey;
-  facilitatorUrl: string;
+  /** Path to <agentName>.enclave.json bundle file */
+  bundlePath?: string;
+  /** Path to notes JSON file */
+  notesPath?: string;
+  /** Path to proving artifacts directory (wasm-prover-nodejs + wasm-witness-nodejs outputs) */
+  provingArtifactsPath?: string;
+  /** Optional path to fixture JSON (bypasses live proving when set) */
+  fixturePath?: string;
 };
 
 export interface Agent {
-  fetch(url: string, init?: unknown): Promise<Response>;
+  fetch(url: string, init?: RequestInit): Promise<Response>;
 }
 
-// Phase 3 target — real instantiation lands after SDK-01..07.
-export function createAgent(_config: AgentConfig): Agent {
-  throw new Error("@enclave/agent: Phase 3 target, not yet implemented");
+export async function createAgent(_config?: AgentConfig): Promise<Agent> {
+  throw new Error('@enclave/agent: Phase 3 Plan 05 target — not yet implemented');
 }
 
-export type { ShieldedProof };
+// Removed: PHASE_0_STUB — Phase 3 replaces the stub marker
