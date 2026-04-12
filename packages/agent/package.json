@@ -14,7 +14,8 @@
     "test:watch": "jest --watch --no-coverage"
   },
   "dependencies": {
-    "@enclave/core": "*"
+    "@enclave/core": "*",
+    "pino": "^10.3.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
