@@ -206,7 +206,11 @@ Plans:
   3. The public GitHub repo (the fork of `NethermindEth/stellar-private-payments`) has a README that explains the product, the shared-ASP + off-chain-policy architecture, upstream credit to Nethermind/SDF, Apache 2.0 + LGPL obligations, and a quickstart (DEMO-01).
   4. At submission time, `scripts/preflight.sh` returns zero errors against the live testnet deployment: facilitator `/health`, demo endpoints, pool contract all respond (DEMO-03).
   5. The DoraHacks writeup is submitted by 2026-04-17 with links to the repo, the video, the testnet contract addresses, and the README; the video narration does NOT claim per-org on-chain ASPs, per-org anonymity sets, mainnet readiness, or security audit status (DEMO-04, DEMO-06).
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 06-01-readme-delta-groundwork.md — README delta: architecture image + Testnet Contracts section rendered from deployments.json + YouTube/DoraHacks URL placeholder slots (DEMO-01, DEMO-06; wave 1 — pre-Day 5 prep)
+  - [ ] 06-02-day5-rehearsal-dorahacks-draft.md — Day 5 rehearsal recording (DEMO-05 backup) + DoraHacks writeup draft with Franco opener (DEMO-04 draft, DEMO-06; wave 2 — 2026-04-15)
+  - [ ] 06-03-day6-final-recording-youtube-upload.md — Day 6 final recording + CapCut export + YouTube unlisted upload + README URL substitution (DEMO-02, DEMO-05, DEMO-01, DEMO-06; wave 3 — 2026-04-16)
+  - [ ] 06-04-day7-submission-dorahacks-publish.md — Final preflight against live testnet + DoraHacks publish + final claim-hygiene grep (DEMO-03, DEMO-04, DEMO-01, DEMO-06; wave 4 — 2026-04-16/17)
 
 **Cut decision if Phase 6 slips:** Day 7 is the buffer — use it. If day 6 recording fails, day 7 is one last re-take using the day-5 backup as fallback narration. If day 7 is also lost, submit with the day-5 backup video and a README apology. Apply cut 3 (drop post-paper PDF, fold into README section) and cut 4 (English-only README) preemptively before day 5 to free the recording window. Under NO circumstances miss the 2026-04-17 submission deadline — an imperfect submission beats a perfect miss.
 
@@ -328,7 +332,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 3. Agent SDK (`@enclave/agent`) | 3/5 | In Progress | - |
 | 4. Enclave Gate Middleware + Gated Endpoint | 0/2 | Planned | - |
 | 5. Dashboard + Ops Hardening | 0/TBD | Not started | - |
-| 6. Demo Recording + Submission | 0/TBD | Not started | - |
+| 6. Demo Recording + Submission | 0/4 | Not started | Planned (4 plans) |
 
 ---
 *Roadmap created: 2026-04-10 from PROJECT.md + REQUIREMENTS.md + PITFALLS.md. Coarse granularity, 7 phases, 54/54 requirements mapped. Updated 2026-04-10 with ASP architectural decisions: Model X (shared org spending key), deterministic blinding=0, fresh contract redeploys with us as admin, permissionless asp-membership via `set_admin_insert_only(false)`, empty asp-non-membership SMT, facilitator gas-relaying for spends (meta-tx model), and Phase-0 verification of upstream prover null-input behavior. Phase 0 planned 2026-04-10: 5 plans with wave structure (wave 1: 00-01 hygiene; wave 2: 00-02 scaffold, 00-03 narrative, 00-04 smoke test; wave 3: 00-05 benchmark). Branch convention locked as per-phase `feat/phase-N` off `develop`.*

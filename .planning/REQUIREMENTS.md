@@ -36,7 +36,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 - [x] **ORG-01**: An org admin can bootstrap an org via a single CLI command. Bootstrap performs: (a) generate org admin keypair locally, (b) generate one shared `orgSpendingPubKey` locally, (c) submit **one** on-chain tx — `asp_membership.insert_leaf(Poseidon2(orgSpendingPubKey, 0))` — signed and gas-paid by the org admin, (d) write the org row to the off-chain registry. This is the only on-chain action required for org creation.
 - [x] **ORG-02**: An org admin can enroll agent members under an existing org via a CLI command. In Model X, agent enrollment is **purely off-chain**: it generates a per-agent auth keypair (used by the facilitator for audit/rate-limit), shares the existing `orgSpendingPubKey` with the agent, and writes the agent's auth key to the registry. Zero on-chain txs.
 - [x] **ORG-03**: An org admin can pre-fund the treasury by depositing testnet USDC into the shielded pool; the deposited notes are bound to the `orgSpendingPubKey` and tagged in the off-chain registry. The deposit tx is signed and gas-paid by the org admin.
-- [ ] **ORG-04**: Enrollment is frozen during demo recording to avoid ASP root drift (Pitfall 3); the freeze is enforced by the preflight script and a `REGISTRY_FROZEN=1` env flag
+- [x] **ORG-04**: Enrollment is frozen during demo recording to avoid ASP root drift (Pitfall 3); the freeze is enforced by the preflight script and a `REGISTRY_FROZEN=1` env flag
 - [x] **ORG-05**: Blinding factor used in all `asp-membership` leaves is the deterministic constant `0` for the v1 MVP. The SDK never generates random blindings for ASP entries. This trade-off is documented in the README as "v2 will introduce random blindings for anti-correlation".
 
 ### Facilitator Bridge
@@ -65,7 +65,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 - [x] **GATE-01**: A `withEnclaveGate({ orgId })` Next.js middleware exists that only serves the wrapped endpoint if the caller presents a valid shielded proof of membership in the given org
 - [x] **GATE-02**: The middleware rejects replayed proofs (nonce + nullifier tracked per-request)
 - [x] **GATE-03**: The middleware verification latency stays under 3 s per request on the demo machine (well below the 10 s Vercel function timeout)
-- [ ] **GATE-04**: One demo endpoint in `apps/demo/` is gated by `withEnclaveGate` and accessible only to agents from Northfield Capital; the same endpoint returns 402 to agents from Ashford Partners and Bayridge Capital
+- [x] **GATE-04**: One demo endpoint in `apps/demo/` is gated by `withEnclaveGate` and accessible only to agents from Northfield Capital; the same endpoint returns 402 to agents from Ashford Partners and Bayridge Capital
 
 ### Local Demo Dashboard
 
@@ -172,7 +172,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | ORG-01 | Phase 1 | Complete |
 | ORG-02 | Phase 1 | Complete |
 | ORG-03 | Phase 1 | Complete |
-| ORG-04 | Phase 4 | Pending |
+| ORG-04 | Phase 4 | Complete |
 | ORG-05 | Phase 1 | Complete |
 | FACIL-01 | Phase 2 | Complete |
 | FACIL-02 | Phase 2 | Cut (2026-04-11) |
@@ -192,7 +192,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | GATE-01 | Phase 4 | Complete |
 | GATE-02 | Phase 4 | Complete |
 | GATE-03 | Phase 4 | Complete |
-| GATE-04 | Phase 4 | Pending |
+| GATE-04 | Phase 4 | Complete |
 | DASH-01 | Phase 5 | Pending |
 | DASH-02 | Phase 5 | Pending |
 | DASH-03 | Phase 5 | Pending |

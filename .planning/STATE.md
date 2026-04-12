@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
 current_plan: Not started
 status: planning
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-04-12T23:40:56.921Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-04-12T23:46:50.980Z"
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 25
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Session State
@@ -65,6 +65,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 | Phase 03-agent-sdk-enclave-agent P05 | 9 min | 2 tasks | 7 files |
 | Phase 03.1-agent-wire-format-fix P01 | 5 min | 3 tasks | 4 files |
 | Phase 04-enclave-gate-middleware-gated-endpoint P01 | 8min | 3 tasks | 10 files |
+| Phase 04-enclave-gate-middleware-gated-endpoint P02 | 4min | 3 tasks | 10 files |
 
 ## Decisions
 
@@ -146,6 +147,9 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 04-01]: gate/ has no express runtime dep — @types/express only; consuming app (apps/demo) provides Express at runtime
 - [Phase 04-01]: verifyWithFacilitator composes full VerifyRequest with x402Version:1 wrapper; gate never inspects proof internals — all verification delegated to facilitator /verify
 - [Phase 04-01]: Org-scoping checked before X-PAYMENT header parse — allowedAuthKeys mismatch returns authorization_required/org_not_authorized before any proof processing
+- [Phase 04-02]: pino-http ESM/CJS interop cast applied in demo app same as facilitator (pinoHttpModule as any)
+- [Phase 04-02]: Env.validate() runs at module top-level; dynamic import in e2e tests after process.env set — module caching is desired (single app instance shared across tests)
+- [Phase 04-02]: applyFreezeGuard reads URLSearchParams; disables createOrg/enrollAgent/deposit when ?frozen=1 (ORG-04)
 
 ## Blockers
 
@@ -164,8 +168,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T23:40:56.919Z
-**Stopped at:** Completed 04-01-PLAN.md
+**Last session:** 2026-04-12T23:46:50.978Z
+**Stopped at:** Completed 04-02-PLAN.md
 **Resume file:** None
 **Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).
 
