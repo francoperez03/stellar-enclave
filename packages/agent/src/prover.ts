@@ -11,6 +11,7 @@
 import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { EnclaveNote } from './types.js';
 
 /** Loaded prover handle — call prove() with witness JSON string */
 export interface ProverHandle {
@@ -137,4 +138,141 @@ export function derivePublicKey(artifactsPath: string, privKeyBytes: Uint8Array)
   };
   const zeroes = new Uint8Array(32);
   return poseidon2_hash2(privKeyBytes, zeroes, 3);
+}
+
+// ─── Witness Construction (SDK-07 — Model X) ──────────────────────────────────
+
+/** ASP membership proof for a single input slot */
+export interface MembershipProof {
+  /** Always "0" for MVP (ORG-05 — deterministic zero blinding) */
+  blinding: string;
+  /** aspLeaf decimal string */
+  leaf: string;
+  /** Array of decimal string siblings */
+  pathElements: string[];
+  /** Decimal path index */
+  pathIndices: string;
+}
+
+/** Non-membership (SMT) proof for a single input slot — for the empty banlist (POOL-07) */
+export interface NonMembershipProof {
+  root: string;
+  siblings: string[];
+  oldKey: string;
+  oldValue: string;
+  /** "1" when old leaf was zero */
+  isOld0: string;
+  /** The key being proven non-existent */
+  key: string;
+  /** "0" */
+  value: string;
+  /** "1" = non-membership */
+  fnc: string;
+}
+
+/** Full circuit inputs for policy_tx_2_2 (ready to pass to compute_witness) */
+export interface WitnessInputs {
+  inAmount: [string, string];
+  inBlinding: [string, string];
+  inPrivateKey: [string, string];
+  inPathElements: [string[], string[]];
+  inPathIndices: [string, string];
+  membershipProofs: [MembershipProof, MembershipProof];
+  nonMembershipProofs: [NonMembershipProof, NonMembershipProof];
+  extDataHash: string;
+  outAmount: [string, string];
+  outBlinding: [string, string];
+  outPubKey: [string, string];
+}
+
+/** Parameters for buildWitnessInputs */
+export interface BuildWitnessParams {
+  /** Org spending private key as hex string (Model X: used for BOTH input slots) */
+  orgSpendingPrivKey: string;
+  /** The real note being spent (amount > 0) */
+  realNote: EnclaveNote;
+  /** The null/dummy note (amount = 0, pre-deposited at org bootstrap) */
+  nullNote: EnclaveNote;
+  /** Payment amount in stroops as BigInt */
+  payAmount: bigint;
+  /** Change amount = realNote.amount - payAmount (>=0) */
+  changeAmount: bigint;
+  /** Blinding for the change output (from notes.json or deterministic 0 for MVP) */
+  changeBlinding: string;
+  /** extDataHash as decimal string — computed by buildExtDataHash() */
+  extDataHash: string;
+  /** Empty SMT non-membership proofs (one per input slot, for empty banlist) */
+  nonMembershipProofs: [NonMembershipProof, NonMembershipProof];
+}
+
+/**
+ * Build the policy_tx_2_2 circuit witness inputs for a Model X payment.
+ *
+ * MODEL X INVARIANT (SDK-07 + POOL-08 H4):
+ *   inPrivateKey[0] === inPrivateKey[1] === orgSpendingPrivKey
+ *   Both slots use the same shared org spending key — this is how all agents
+ *   in an org share a single keypair identity. The corresponding public key
+ *   was inserted once into asp-membership at org bootstrap.
+ *
+ * SLOT 0 = null slot: inAmount="0", uses nullNote (zero-amount dummy)
+ * SLOT 1 = real slot: inAmount=payAmount, uses realNote
+ *
+ * ANTI-PATTERN: Do NOT include _pool08_evidence or inPublicKey in the returned object.
+ * These are metadata fields in the bench fixture — not circuit inputs. The circuit
+ * derives inPublicKey internally from inPrivateKey via Keypair().
+ *
+ * ASP membership blinding is always "0" per ORG-05.
+ */
+export function buildWitnessInputs(params: BuildWitnessParams): WitnessInputs {
+  const {
+    orgSpendingPrivKey,
+    realNote,
+    nullNote,
+    payAmount,
+    changeAmount,
+    changeBlinding,
+    extDataHash,
+    nonMembershipProofs,
+  } = params;
+
+  const membershipProofs: [MembershipProof, MembershipProof] = [
+    {
+      blinding: '0',               // ORG-05: deterministic zero blinding
+      leaf: nullNote.aspLeaf,
+      pathElements: nullNote.aspPathElements,
+      pathIndices: nullNote.aspPathIndex,
+    },
+    {
+      blinding: '0',               // ORG-05: deterministic zero blinding
+      leaf: realNote.aspLeaf,
+      pathElements: realNote.aspPathElements,
+      pathIndices: realNote.aspPathIndex,
+    },
+  ];
+
+  return {
+    // MODEL X: both slots use the SAME shared spending key
+    inPrivateKey: [orgSpendingPrivKey, orgSpendingPrivKey],
+
+    // Null slot (index 0): amount=0, uses dummy note
+    // Real slot (index 1): amount=payAmount, uses real note
+    inAmount: ['0', payAmount.toString()],
+    inBlinding: [nullNote.blinding, realNote.blinding],
+    inPathElements: [nullNote.pathElements, realNote.pathElements],
+    inPathIndices: [nullNote.pathIndex, realNote.pathIndex],
+
+    // ASP membership (both slots, blinding=0 per ORG-05)
+    membershipProofs,
+
+    // Non-membership against empty banlist (POOL-07)
+    nonMembershipProofs,
+
+    // ExtData binding
+    extDataHash,
+
+    // Outputs: change goes back to org (slot 0), null output (slot 1)
+    outAmount: [changeAmount.toString(), '0'],
+    outBlinding: [changeBlinding, '0'],
+    outPubKey: [orgSpendingPrivKey, orgSpendingPrivKey], // recipient = org
+  };
 }

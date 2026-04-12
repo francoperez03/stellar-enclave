@@ -71,12 +71,12 @@ describe('Witness construction — Model X (SDK-07)', () => {
   });
 
   it('does NOT include _pool08_evidence field (not a circuit input)', () => {
-    const inputs = buildWitnessInputs(BASE_PARAMS) as Record<string, unknown>;
+    const inputs = buildWitnessInputs(BASE_PARAMS) as unknown as Record<string, unknown>;
     expect(Object.keys(inputs)).not.toContain('_pool08_evidence');
   });
 
   it('does NOT include inPublicKey field (circuit derives it from inPrivateKey internally)', () => {
-    const inputs = buildWitnessInputs(BASE_PARAMS) as Record<string, unknown>;
+    const inputs = buildWitnessInputs(BASE_PARAMS) as unknown as Record<string, unknown>;
     expect(Object.keys(inputs)).not.toContain('inPublicKey');
   });
 
