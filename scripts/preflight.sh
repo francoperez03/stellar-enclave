@@ -32,6 +32,10 @@ Subcommands:
     (~30 days at 5s/ledger). --dry-run prints the commands without
     executing.
 
+  freeze-check
+    Verify REGISTRY_FROZEN=1 is set in the environment. Required before
+    demo recording to prevent ASP root drift (ORG-04).
+
   -h, --help
     Show this message.
 USAGE
@@ -79,11 +83,19 @@ cmd_pool_ttl_bump() {
   step "pool-ttl-bump complete (${#contracts[@]} contracts)"
 }
 
+cmd_freeze_check() {
+  if [[ "${REGISTRY_FROZEN:-}" != "1" ]]; then
+    die "REGISTRY_FROZEN is not set to 1. Set REGISTRY_FROZEN=1 in your .env before recording."
+  fi
+  step "freeze-check PASS: REGISTRY_FROZEN=1"
+}
+
 SUBCMD="${1:-}"
 shift || true
 
 case "$SUBCMD" in
   pool-ttl-bump) cmd_pool_ttl_bump "$@" ;;
+  freeze-check)  cmd_freeze_check "$@" ;;
   -h|--help|"") usage ;;
   *) die "unknown subcommand: $SUBCMD" ;;
 esac

@@ -496,6 +496,28 @@ function wireCopyButtons() {
 }
 
 // ---------------------------------------------------------------------------
+// Enrollment freeze guard (ORG-04)
+// ---------------------------------------------------------------------------
+
+/**
+ * Disable enrollment and deposit buttons when ?frozen=1 is present.
+ * Prevents accidental ASP root drift during demo recording.
+ */
+function applyFreezeGuard() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('frozen') !== '1') return;
+
+    const btns = [els.createOrgBtn, els.enrollAgentBtn, els.depositBtn];
+    for (const btn of btns) {
+        if (!btn) continue;
+        btn.disabled = true;
+        btn.title = 'Registry frozen for demo recording';
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    logActivity('Registry frozen (ORG-04) — enrollment + deposit disabled for recording');
+}
+
+// ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
 
@@ -529,7 +551,7 @@ async function init() {
     });
 
     wireCopyButtons();
-
+    applyFreezeGuard();
     await loadDeployments();
     logActivity('Enclave admin ready. Click Connect Freighter to begin.');
 }
