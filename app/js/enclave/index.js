@@ -14,6 +14,7 @@
  */
 
 import { connectWallet, signWalletTransaction, signWalletAuthEntry, getWalletNetwork } from '../wallet.js';
+import { initProverWasm } from '../bridge.js';
 import { createOrg } from './org.js';
 import { depositForOrg } from './deposit.js';
 import { enrollAgent } from './enroll.js';
@@ -142,20 +143,18 @@ function buildSignerOptions() {
     return {
         publicKey: state.wallet.address,
         signTransaction: async (xdr, opts) => {
-            const { signedTxXdr } = await signWalletTransaction(xdr, {
+            return signWalletTransaction(xdr, {
                 networkPassphrase: opts?.networkPassphrase,
                 address: state.wallet.address,
                 ...opts,
             });
-            return signedTxXdr;
         },
         signAuthEntry: async (entryXdr, opts) => {
-            const { signedAuthEntry } = await signWalletAuthEntry(entryXdr, {
+            return signWalletAuthEntry(entryXdr, {
                 networkPassphrase: opts?.networkPassphrase,
                 address: state.wallet.address,
                 ...opts,
             });
-            return signedAuthEntry;
         },
     };
 }
@@ -452,6 +451,11 @@ function wireCopyButtons() {
 // ---------------------------------------------------------------------------
 
 async function init() {
+    try {
+        await initProverWasm();
+    } catch (e) {
+        console.warn('[Enclave] prover WASM init failed (non-fatal):', e);
+    }
     els.connectBtn.addEventListener('click', handleConnect);
     els.createOrgBtn.addEventListener('click', handleCreateOrg);
     els.depositBtn.addEventListener('click', handleDeposit);

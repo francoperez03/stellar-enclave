@@ -36,7 +36,11 @@ import {
 // Circuit constants - aliased from centralized utils for local readability
 const LEVELS = TREE_DEPTH;
 const SMT_LEVELS = SMT_DEPTH;
-const BN256_MOD = BigInt(getBN256Modulus());
+let BN256_MOD;
+function getBN256Mod() {
+    if (BN256_MOD === undefined) BN256_MOD = BigInt(getBN256Modulus());
+    return BN256_MOD;
+}
 
 /**
  * Converts a signed amount to its field element representation (U256).
@@ -50,7 +54,7 @@ function toFieldElement(amount) {
         return amount;
     }
     // Negative = BN256_MOD - |amount|
-    return BN256_MOD + amount;
+    return getBN256Mod() + amount;
 }
 
 /**
@@ -211,7 +215,7 @@ export function hashExtData(extData) {
 
     const digest = keccak256(xdrBytes);
     const digestBig = bytesToBigIntBE(digest);
-    const reduced = digestBig % BN256_MOD;
+    const reduced = digestBig % getBN256Mod();
 
     console.log('[hashExtData] Hash (hex):', reduced.toString(16).padStart(64, '0'));
 
@@ -273,7 +277,7 @@ function createRealInput(privKeyBytes, pubKeyBytes, note, merkleProof) {
     const leafIndex = note.leafIndex;
     
     // Validate blinding is within field bounds
-    if (blinding >= BN256_MOD) {
+    if (blinding >= getBN256Mod()) {
         console.error(`[TxBuilder] Note blinding exceeds field modulus!`, {
             noteId: note.id?.slice(0, 16),
             storedBlinding: note.blinding?.slice?.(0, 40) || note.blinding,

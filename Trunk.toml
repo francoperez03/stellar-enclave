@@ -54,5 +54,14 @@ command_arguments = ["-c", """
 ./app/node_modules/.bin/esbuild app/js/ui.js --external:./prover.js --external:./witness/* --bundle --outfile=$TRUNK_STAGING_DIR/js/ui.js --format=esm
 ./app/node_modules/.bin/esbuild app/js/worker.js --external:./prover.js --external:./witness/* --bundle --outfile=$TRUNK_STAGING_DIR/js/worker.js --format=esm
 ./app/node_modules/.bin/esbuild app/js/admin.js --external:./bridge.js --bundle --outfile=$TRUNK_STAGING_DIR/js/admin.js --format=esm
+cp target/wasm-bindgen/release/prover.js app/js/prover.js
+mkdir -p app/js/witness
+cp target/wasm-witness/witness.js app/js/witness/witness.js 2>/dev/null || true
 ./app/node_modules/.bin/esbuild app/js/enclave/index.js --external:./prover.js --external:./witness/* --bundle --outfile=$TRUNK_STAGING_DIR/js/enclave/index.js --format=esm
+rm -f app/js/prover.js app/js/witness/witness.js
+cp target/wasm-bindgen/release/prover.js $TRUNK_STAGING_DIR/js/enclave/prover.js 2>/dev/null || true
+cp target/wasm-bindgen/release/prover_bg.wasm $TRUNK_STAGING_DIR/js/enclave/prover_bg.wasm 2>/dev/null || true
+mkdir -p $TRUNK_STAGING_DIR/js/enclave/witness
+cp target/wasm-witness/witness.js $TRUNK_STAGING_DIR/js/enclave/witness/witness.js 2>/dev/null || true
+cp target/wasm-witness/witness_bg.wasm $TRUNK_STAGING_DIR/js/enclave/witness/witness_bg.wasm 2>/dev/null || true
 """]
