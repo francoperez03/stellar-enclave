@@ -62,9 +62,9 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 
 ### Enclave Gate Middleware
 
-- [ ] **GATE-01**: A `withEnclaveGate({ orgId })` Next.js middleware exists that only serves the wrapped endpoint if the caller presents a valid shielded proof of membership in the given org
-- [ ] **GATE-02**: The middleware rejects replayed proofs (nonce + nullifier tracked per-request)
-- [ ] **GATE-03**: The middleware verification latency stays under 3 s per request on the demo machine (well below the 10 s Vercel function timeout)
+- [x] **GATE-01**: A `withEnclaveGate({ orgId })` Next.js middleware exists that only serves the wrapped endpoint if the caller presents a valid shielded proof of membership in the given org
+- [x] **GATE-02**: The middleware rejects replayed proofs (nonce + nullifier tracked per-request)
+- [x] **GATE-03**: The middleware verification latency stays under 3 s per request on the demo machine (well below the 10 s Vercel function timeout)
 - [ ] **GATE-04**: One demo endpoint in `apps/demo/` is gated by `withEnclaveGate` and accessible only to agents from Northfield Capital; the same endpoint returns 402 to agents from Ashford Partners and Bayridge Capital
 
 ### Local Demo Dashboard
@@ -189,9 +189,9 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | SDK-05 | Phase 3 | Complete |
 | SDK-06 | Phase 3 | Complete |
 | SDK-07 | Phase 3 | Complete |
-| GATE-01 | Phase 4 | Pending |
-| GATE-02 | Phase 4 | Pending |
-| GATE-03 | Phase 4 | Pending |
+| GATE-01 | Phase 4 | Complete |
+| GATE-02 | Phase 4 | Complete |
+| GATE-03 | Phase 4 | Complete |
 | GATE-04 | Phase 4 | Pending |
 | DASH-01 | Phase 5 | Pending |
 | DASH-02 | Phase 5 | Pending |

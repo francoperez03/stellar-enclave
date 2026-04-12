@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
-current_plan: 5
-status: verifying
-stopped_at: Completed 03.1-01-PLAN.md
-last_updated: "2026-04-12T23:27:37.748Z"
+current_plan: Not started
+status: planning
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-12T23:40:56.921Z"
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Session State
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md
 
 **Milestone:** v1.0 milestone
 **Current phase:** 03-agent-sdk-enclave-agent
-**Current Plan:** 5
+**Current Plan:** Not started
 **Total Plans in Phase:** 5
-**Status:** Phase complete — ready for verification
+**Status:** Ready to plan
 
 ## Progress
 
@@ -64,6 +64,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 | Phase 03-agent-sdk-enclave-agent P04 | 3 min | 1 tasks | 4 files |
 | Phase 03-agent-sdk-enclave-agent P05 | 9 min | 2 tasks | 7 files |
 | Phase 03.1-agent-wire-format-fix P01 | 5 min | 3 tasks | 4 files |
+| Phase 04-enclave-gate-middleware-gated-endpoint P01 | 8min | 3 tasks | 10 files |
 
 ## Decisions
 
@@ -142,6 +143,9 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 03-05]: Greedy smallest-sufficient note selection (not largest-first) — resolves plan internal contradiction (docstring vs behavior spec); minimizes change-output size, predictable for demo
 - [Phase 03-05]: Wire format locked: paymentPayload wrapper (C1) + scheme='shielded-exact' + flat proof.a/b/c hex (C3) + snake_case extData (C2); response field is 'transaction' not 'txHash' (C5); 409 = already_spent (C6); Authorization Bearer <authKey> on /settle (M3)
 - [Phase 03.1-01]: decomposePublicInputs kept dependency-free (no utils/extDataHash import); extractFixturePublicInputs supports PRIMARY (hex) + LEGACY shape; invariant guards detect PI[7]!=PI[8] / PI[9]!=PI[10] ordering drift
+- [Phase 04-01]: gate/ has no express runtime dep — @types/express only; consuming app (apps/demo) provides Express at runtime
+- [Phase 04-01]: verifyWithFacilitator composes full VerifyRequest with x402Version:1 wrapper; gate never inspects proof internals — all verification delegated to facilitator /verify
+- [Phase 04-01]: Org-scoping checked before X-PAYMENT header parse — allowedAuthKeys mismatch returns authorization_required/org_not_authorized before any proof processing
 
 ## Blockers
 
@@ -160,8 +164,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T23:27:37.745Z
-**Stopped at:** Completed 03.1-01-PLAN.md
+**Last session:** 2026-04-12T23:40:56.919Z
+**Stopped at:** Completed 04-01-PLAN.md
 **Resume file:** None
 **Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).
 
