@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 01-pool-integration-multi-org-namespace
 current_plan: 4
 status: verifying
-stopped_at: "Completed 02-05 (chain write path: buildPoolTransactArgs + simulate/submit + error mapping)"
-last_updated: "2026-04-12T13:43:10.845Z"
+stopped_at: "Checkpoint: 02-08-PLAN.md Task 3 - human-verify (branch DEFERRED, awaiting Phase 3 fixture)"
+last_updated: "2026-04-12T14:07:45.357Z"
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 22
-  completed_plans: 15
+  completed_phases: 3
+  total_plans: 24
+  completed_plans: 17
 ---
 
 # Session State
@@ -53,6 +53,8 @@ Overall milestone: 1/7 phases complete.
 | Phase 02-facilitator-bridge P02 | 9 min | 3 tasks | 7 files |
 | Phase 02-facilitator-bridge P06 | 6 min | 3 tasks | 6 files |
 | Phase 02-facilitator-bridge P05 | 7 min | 2 tasks | 7 files |
+| Phase 02-facilitator-bridge P07 | 90min | 3 tasks | 12 files |
+| Phase 02-facilitator-bridge P08 | 45min | 2 tasks | 8 files |
 
 ## Decisions
 
@@ -102,6 +104,12 @@ Overall milestone: 1/7 phases complete.
 - [Phase 02-06]: GetEventsRequest uses discriminated union (startLedger vs cursor modes); event.txHash not event.transactionHash per stellar-sdk 14.4.2
 - [Phase 02-05]: Proof ScMap has 9 keys including nested Groth16Proof sub-map (a,b,c) as first entry; plan's action described 8 keys but omitted the proof field required by pool.rs Proof struct
 - [Phase 02-05]: SubmitInvalidReason closed set maps all pool contract error codes (#1-#11) plus rpc_congestion/rpc_insufficient_fee/submit_timeout; mapSubmitError never throws and accepts string, Error, or unknown
+- [Phase 02-07]: TOCTOU atomicity in /settle: tryClaim all nullifiers synchronously before any async work; rollback all on first failure — Node.js single-thread JS guarantees Map.has/Map.set atomicity
+- [Phase 02-07]: wireToExtDataLike conversion at route boundary: routes accept ExtDataWireFormat (strings) from HTTP and convert immediately to ExtDataLike (bigint + Uint8Array) for all downstream validation
+- [Phase 02-07]: pino-http NodeNext interop: (pinoHttpModule as any) cast required because NodeNext module resolution resolves CJS namespace instead of callable default
+- [Phase 02-07]: FACIL-06 synchronous settlement: /settle awaits submitPoolTransaction to chain confirmation before responding — no fire-and-forget
+- [Phase 02-facilitator-bridge]: Bootstrap CLI uses raw 32-byte Ed25519 seed (mode 0o600) per CONTEXT.md D4; live e2e is DEFERRED until Phase 3 produces withdrawal fixture
+- [Phase 02-facilitator-bridge]: Demo lock uses canonical file mapping fallback so tests pass even without explicit FACIL-* IDs in test descriptions
 
 ## Blockers
 
@@ -118,7 +126,7 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T13:43:10.843Z
-**Stopped at:** Completed 02-05 (chain write path: buildPoolTransactArgs + simulate/submit + error mapping)
+**Last session:** 2026-04-12T14:07:45.355Z
+**Stopped at:** Checkpoint: 02-08-PLAN.md Task 3 - human-verify (branch DEFERRED, awaiting Phase 3 fixture)
 **Resume file:** None
 **Next action:** Begin 01-02 (`/gsd:execute-phase 1`) — next plan is multi-org namespacing (ORG_ID scoping on asp-membership + pool). Manual step before recording day: mikey USDC faucet drip at `https://faucet.circle.com/`, then re-run `scripts/seed-demo-accounts.sh` to complete the 1000 USDC transfer to user.

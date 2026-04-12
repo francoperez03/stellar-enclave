@@ -38,7 +38,7 @@ These are the five pitfalls from `research/PITFALLS.md` that can kill the submis
 | # | Pitfall | Lethality | Defused in | How it dies |
 |---|---------|-----------|------------|-------------|
 | 1 | 4/4 | Complete   | 2026-04-12 | Narrative locked in writing across PROJECT.md, REQUIREMENTS.md, README, pitch script on day 1. SETUP-07. |
-| 2 | 5/8 | In Progress|  | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
+| 2 | 8/8 | Complete   | 2026-04-12 | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
 | 3 | **TTL expiry + RPC 7-day retention** — pool storage TTL expires mid-demo; events outside 7-day window break indexer (Pitfalls 10, 11) | Testnet deploy dies silently during recording | **Phase 0 (smoke test)** + Phase 5 (preflight) | Day-1 `stellar contract invoke -- get_root` against deployed pool; daily `contract extend` routine; `scripts/preflight.sh` blocks recording if TTL <48h or oldest event >6 days. SETUP-05, OPS-01, OPS-02. |
 | 4 | **Soroban CPU budget can't fit Groth16 verification** — verifier may OOG on the deployed circuit (Pitfall 14) | The entire shielded-pool story is unverifiable; demo is fake | **Phase 0 (smoke test)** | Day-1 end-to-end `transact` against the deployed testnet pool. If it reverts with OOG, scope pivots immediately to mock facilitator + cached proofs; narrative becomes "proof-of-concept pending mainnet budget tuning". SETUP-05. |
 | 5 | **Testnet flakiness during live recording** — RPC, Horizon, faucet, deployed contracts can all go down during recording (Pitfall 17) | Submission goes out with broken video or no video | **Phase 6 (rehearsal + buffer)** | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
@@ -59,7 +59,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 
 - [ ] **Phase 0: Setup & Day-1 De-risking** — Lock narrative, run smoke test, benchmark prover, verify TTL, preserve license, scan for secrets.
 - [x] **Phase 1: Pool Integration & Multi-Org Namespace** — Wire existing pool, model orgs as off-chain namespaces, implement org bootstrap + enrollment + pre-funding. (completed 2026-04-12)
-- [ ] **Phase 2: Facilitator Bridge** — Build the shielded-proof → USDC x402 settlement service with replay protection, policy enforcement, and `/health`.
+- [x] **Phase 2: Facilitator Bridge** — Build the shielded-proof → USDC x402 settlement service with replay protection, policy enforcement, and `/health`. (completed 2026-04-12)
 - [ ] **Phase 3: Agent SDK (`@enclave/agent`)** — Ship the Node-runnable agent client with proving, key hygiene, and structured logging.
 - [ ] **Phase 4: Enclave Gate Middleware + Gated Endpoint** — Add the `withEnclaveGate` middleware, one gated demo endpoint, and the enrollment-freeze discipline.
 - [ ] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL cron, cached demo fixtures.
@@ -118,7 +118,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
   5. `/health` reports USDC float balance, **XLM gas float balance**, last-seen pool root, and readiness; both floats are seeded with ≥3× the expected demo budget before recording day (FACIL-05, FACIL-07, FACIL-08).
 **Plans**: 8 plans across 4 waves (wave 0 test infra → wave 1 primitives → wave 2 chain + config + mock → wave 3 HTTP app + CLI)
 - [ ] 02-01-PLAN.md — Wave 0 test infra: facilitator workspace package.json, vitest/tsup config, canonical fixtures, test helpers
-- [ ] 02-02-PLAN.md — @enclave/core Phase 2 types, hashExtData Node port, structural bindingCheck
+- [x] 02-02-PLAN.md — @enclave/core Phase 2 types, hashExtData Node port, structural bindingCheck (completed 2026-04-12)
 - [ ] 02-03-PLAN.md — TOCTOU-safe NullifierCache primitive (peek/tryClaim/commit/release/hydrate)
 - [ ] 02-04-PLAN.md — checkSolvency pure validator + Horizon/Soroban balance reader
 - [ ] 02-05-PLAN.md — buildPoolTransactArgs, simulatePoolTransaction, submitPoolTransaction, errorMapping
@@ -160,7 +160,10 @@ If ANY of these fail on day 1, the scope pivots the same morning:
   2. Per-request verification latency stays under 3s on the demo machine (well below the 10s Vercel function timeout); a latency assertion runs in the e2e smoke test (GATE-03).
   3. A Northfield Capital agent successfully calls the gated endpoint; the same endpoint returns 402 to Ashford Partners and Bayridge Capital agents — recorded in a screen capture for the video (GATE-04).
   4. `scripts/preflight.sh` enforces `REGISTRY_FROZEN=1` before demo recording; attempts to enroll new members during the freeze window fail loudly (ORG-04, Pitfall 3 defusal).
-**Plans**: TBD
+**Plans**: 2 plans across 2 waves (wave 1: gate middleware package; wave 2: demo app + enrollment freeze)
+Plans:
+- [ ] 04-01-PLAN.md — @enclave/gate middleware package: withEnclaveGate factory, facilitatorClient, env config, types, unit tests (GATE-01, GATE-02, GATE-03)
+- [ ] 04-02-PLAN.md — Demo app gated endpoint + enrollment freeze: Express app at apps/demo/, org-scoping, preflight freeze-check, browser freeze guard, e2e latency test (GATE-04, ORG-04)
 
 **Cut decision if Phase 4 slips:** Apply cut 2 — Enclave Gate is NOT published as `@gate/middleware`; it lives as a single file in `apps/demo/` and is described as "a gated route inside the Enclave Treasury demo" in the README. If the middleware itself is broken, the video narration swaps Enclave Gate for a "roadmap preview" slide ("Enclave Gate — coming in week 2") and the demo shows only the Enclave Treasury facilitator flow. Do NOT cut the enrollment freeze (ORG-04) regardless — it defuses Pitfall 3 and is cheap.
 
@@ -312,7 +315,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 1. Pool Integration & Multi-Org Namespace | 1/4 | In Progress | - |
 | 2. Facilitator Bridge | 0/TBD | Not started | - |
 | 3. Agent SDK (`@enclave/agent`) | 0/TBD | Not started | - |
-| 4. Enclave Gate Middleware + Gated Endpoint | 0/TBD | Not started | - |
+| 4. Enclave Gate Middleware + Gated Endpoint | 0/2 | Planned | - |
 | 5. Dashboard + Ops Hardening | 0/TBD | Not started | - |
 | 6. Demo Recording + Submission | 0/TBD | Not started | - |
 
