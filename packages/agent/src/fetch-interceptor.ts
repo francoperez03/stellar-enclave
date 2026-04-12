@@ -26,6 +26,8 @@ import {
 import type { ProverHandle, ProveResult, NonMembershipProof } from './prover.js';
 import { createLogger } from './logger.js';
 import { hashExtData } from './utils/extDataHash.js';
+import { decomposePublicInputs } from './publicInputs.js';
+import type { ShieldedProofPublicInputs } from './publicInputs.js';
 
 /** Injected prover dependencies — allows tests to stub without monkey-patching ESM modules. */
 export interface ProverDeps {
@@ -139,6 +141,42 @@ function decomposeFixtureProof(proofArr: number[]): { a: Uint8Array; b: Uint8Arr
   };
 }
 
+/** Extract decomposed public inputs from a fixture entry.
+ *  PRIMARY shape (matches wallets/circuits/fixtures/e2e-proof.json):
+ *    fixtureEntry.publicInputs = "<704 hex chars>"
+ *  LEGACY shape (used by inline test fixtures before Phase 03.1):
+ *    fixtureEntry.proof.{root, inputNullifiers, outputCommitment0, ...} = pre-decomposed strings
+ */
+function extractFixturePublicInputs(entry: unknown): ShieldedProofPublicInputs {
+  const e = entry as Record<string, unknown>;
+  // PRIMARY: hex string at top level — decode and decompose
+  if (typeof e['publicInputs'] === 'string') {
+    const hex = (e['publicInputs'] as string).replace(/^0x/, '');
+    if (hex.length !== 704) {
+      throw new Error(`fixture publicInputs hex must be 704 chars (352 bytes), got ${hex.length}`);
+    }
+    const bytes = new Uint8Array(352);
+    for (let i = 0; i < 352; i++) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    return decomposePublicInputs(bytes);
+  }
+  // LEGACY: pre-decomposed fields inside `proof` object
+  const p = e['proof'] as Record<string, unknown> | undefined;
+  if (p && typeof p['root'] === 'string') {
+    const nulls = p['inputNullifiers'] as string[] | undefined;
+    return {
+      root: p['root'] as string,
+      publicAmount: (p['publicAmount'] as string) ?? '0',
+      extDataHash: (p['extDataHash'] as string) ?? '0'.repeat(64),
+      inputNullifiers: [nulls?.[0] ?? '0', nulls?.[1] ?? '0'],
+      outputCommitment0: (p['outputCommitment0'] as string) ?? '0',
+      outputCommitment1: (p['outputCommitment1'] as string) ?? '0',
+      aspMembershipRoot: (p['aspMembershipRoot'] as string) ?? '0',
+      aspNonMembershipRoot: (p['aspNonMembershipRoot'] as string) ?? '0',
+    };
+  }
+  throw new Error('fixture entry missing both .publicInputs hex string and legacy .proof.{root,...} fields');
+}
+
 /**
  * Create an intercepting fetch function that handles x402 payment flows.
  */
@@ -199,6 +237,7 @@ export async function createInterceptingFetch(
     // Resolve proof (fixture or live prover)
     let proofPayload: {
       proof: { a: Uint8Array; b: Uint8Array; c: Uint8Array };
+      publicInputs: ShieldedProofPublicInputs;
       extData: ExtData;
       nullifier: string;
     };
@@ -211,6 +250,7 @@ export async function createInterceptingFetch(
       const fxExt = fixtureEntry.extData as unknown as Record<string, unknown>;
       proofPayload = {
         proof: decomposeFixtureProof(fxProof.proof),
+        publicInputs: extractFixturePublicInputs(fixtureEntry),
         extData: normalizeFixtureExtData(fxExt),
         nullifier: fixtureEntry.note.nullifier,
       };
@@ -253,22 +293,31 @@ export async function createInterceptingFetch(
 
       proofPayload = {
         proof: proveResult.proofComponents,
+        publicInputs: decomposePublicInputs(proveResult.publicInputBytes),
         extData,
         nullifier: note.nullifier,
       };
     }
 
-    // Build proof wire format (C3): flat { a, b, c } as hex strings (NOT nested)
+    // Build proof wire format (ShieldedProofWireFormat) — all 11 fields populated.
+    // - a/b/c: hex, from decomposed Groth16 components
+    // - 7 decimal u256 fields: from public-input LE bytes via decomposePublicInputs()
+    // - extDataHash: big-endian 64-char hex (matches ShieldedProofWireFormat.extDataHash
+    //   and pool.rs ext_data_hash: BytesN<32> convention); hashExtData().hex for the live
+    //   path would be equivalent but decomposition keeps live and fixture paths symmetric.
+    const pi = proofPayload.publicInputs;
     const proofWire = {
       a: toHex(proofPayload.proof.a),
       b: toHex(proofPayload.proof.b),
       c: toHex(proofPayload.proof.c),
-      // Additional public inputs — the facilitator re-derives most of these from
-      // the witness public-input bytes, but the wire format requires the shape.
-      // Callers expecting on-chain submission must populate them from witness;
-      // for MVP the settle route derives them server-side from publicInputBytes
-      // (Phase 2 02-RESEARCH confirms this). Left as empty strings to satisfy
-      // the ShieldedProofWireFormat shape.
+      root: pi.root,
+      inputNullifiers: pi.inputNullifiers,
+      outputCommitment0: pi.outputCommitment0,
+      outputCommitment1: pi.outputCommitment1,
+      publicAmount: pi.publicAmount,
+      extDataHash: pi.extDataHash,
+      aspMembershipRoot: pi.aspMembershipRoot,
+      aspNonMembershipRoot: pi.aspNonMembershipRoot,
     };
 
     // Build extData wire format (C2): snake_case, 0-based, hex-encoded strings
