@@ -9,12 +9,18 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --project unit",
+    "test:unit": "vitest run --project unit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@enclave/core": "*"
+    "@enclave/core": "*",
+    "pino": "^9.14.0"
   },
   "devDependencies": {
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "^3.2.4",
+    "@types/express": "^5.0.0",
+    "@types/node": "22.9.0"
   }
 }
