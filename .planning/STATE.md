@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 01-pool-integration-multi-org-namespace
 current_plan: 4
 status: verifying
-stopped_at: Completed 02-06 (Env class, hydrateNullifierCache, offChainVerify)
-last_updated: "2026-04-12T13:40:54.566Z"
+stopped_at: "Completed 02-05 (chain write path: buildPoolTransactArgs + simulate/submit + error mapping)"
+last_updated: "2026-04-12T13:43:10.845Z"
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 22
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Session State
@@ -52,6 +52,7 @@ Overall milestone: 1/7 phases complete.
 | Phase 02-facilitator-bridge P01 | 6 | 3 tasks | 13 files |
 | Phase 02-facilitator-bridge P02 | 9 min | 3 tasks | 7 files |
 | Phase 02-facilitator-bridge P06 | 6 min | 3 tasks | 6 files |
+| Phase 02-facilitator-bridge P05 | 7 min | 2 tasks | 7 files |
 
 ## Decisions
 
@@ -99,6 +100,8 @@ Overall milestone: 1/7 phases complete.
 - [Phase 02-02]: Golden ext_data_hash vectors synthesized via Node hashExtData port (not cargo e2e) against 112-byte all-zero encrypted outputs; algorithm cross-verified with app/js/transaction-builder.js
 - [Phase 02-06]: ShieldedProofWireFormat uses camelCase (inputNullifiers, publicAmount, extDataHash) — offChainVerify aligns to this interface
 - [Phase 02-06]: GetEventsRequest uses discriminated union (startLedger vs cursor modes); event.txHash not event.transactionHash per stellar-sdk 14.4.2
+- [Phase 02-05]: Proof ScMap has 9 keys including nested Groth16Proof sub-map (a,b,c) as first entry; plan's action described 8 keys but omitted the proof field required by pool.rs Proof struct
+- [Phase 02-05]: SubmitInvalidReason closed set maps all pool contract error codes (#1-#11) plus rpc_congestion/rpc_insufficient_fee/submit_timeout; mapSubmitError never throws and accepts string, Error, or unknown
 
 ## Blockers
 
@@ -115,7 +118,7 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T13:40:54.563Z
-**Stopped at:** Completed 02-06 (Env class, hydrateNullifierCache, offChainVerify)
+**Last session:** 2026-04-12T13:43:10.843Z
+**Stopped at:** Completed 02-05 (chain write path: buildPoolTransactArgs + simulate/submit + error mapping)
 **Resume file:** None
 **Next action:** Begin 01-02 (`/gsd:execute-phase 1`) — next plan is multi-org namespacing (ORG_ID scoping on asp-membership + pool). Manual step before recording day: mikey USDC faucet drip at `https://faucet.circle.com/`, then re-run `scripts/seed-demo-accounts.sh` to complete the 1000 USDC transfer to user.
