@@ -37,7 +37,7 @@ These are the five pitfalls from `research/PITFALLS.md` that can kill the submis
 
 | # | Pitfall | Lethality | Defused in | How it dies |
 |---|---------|-----------|------------|-------------|
-| 1 | 4/4 | Complete   | 2026-04-12 | Narrative locked in writing across PROJECT.md, REQUIREMENTS.md, README, pitch script on day 1. SETUP-07. |
+| 1 | 4/4 | Complete    | 2026-04-12 | Narrative locked in writing across PROJECT.md, REQUIREMENTS.md, README, pitch script on day 1. SETUP-07. |
 | 2 | 8/8 | Complete   | 2026-04-12 | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
 | 3 | **TTL expiry + RPC 7-day retention** — pool storage TTL expires mid-demo; events outside 7-day window break indexer (Pitfalls 10, 11) | Testnet deploy dies silently during recording | **Phase 0 (smoke test)** + Phase 5 (preflight) | Day-1 `stellar contract invoke -- get_root` against deployed pool; daily `contract extend` routine; `scripts/preflight.sh` blocks recording if TTL <48h or oldest event >6 days. SETUP-05, OPS-01, OPS-02. |
 | 4 | **Soroban CPU budget can't fit Groth16 verification** — verifier may OOG on the deployed circuit (Pitfall 14) | The entire shielded-pool story is unverifiable; demo is fake | **Phase 0 (smoke test)** | Day-1 end-to-end `transact` against the deployed testnet pool. If it reverts with OOG, scope pivots immediately to mock facilitator + cached proofs; narrative becomes "proof-of-concept pending mainnet budget tuning". SETUP-05. |
