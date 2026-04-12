@@ -103,11 +103,21 @@ function ensureWorker() {
             };
 
             w.onerror = (error) => {
-                console.error('[ProverClient] Worker error:', error);
-                state.error = error.message || 'Worker error';
+                console.error('[ProverClient] Worker error:', {
+                    message:  error.message,
+                    filename: error.filename,
+                    lineno:   error.lineno,
+                    colno:    error.colno,
+                    type:     error.type,
+                    event:    error,
+                });
+                const msg = error.message
+                    ? `${error.message} (${error.filename}:${error.lineno})`
+                    : 'Worker failed to load — check Network tab for 404s';
+                state.error = msg;
                 clearTimeout(timeoutId);
                 workerReadyPromise = null;
-                reject(error);
+                reject(new Error(msg));
             };
 
         } catch (e) {

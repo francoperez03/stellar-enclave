@@ -18,9 +18,11 @@ import { initProverWasm } from '../bridge.js';
 import { createOrg } from './org.js';
 import { depositForOrg } from './deposit.js';
 import { enrollAgent } from './enroll.js';
-import { getCachedOrgKeys } from './keys.js';
+import { deriveOrgKeysFromFreighter, getCachedOrgKeys, setCachedOrgKeys } from './keys.js';
 import { getOrgByAdmin, listAgents } from './registry.js';
 import { triggerBundleDownload } from './bundle.js';
+import { loadDeployedContracts, readPoolState, readASPMembershipState, readASPNonMembershipState } from '../stellar.js';
+import { StateManager } from '../state/index.js';
 
 // ---------------------------------------------------------------------------
 // Page state
@@ -175,6 +177,7 @@ async function loadDeployments() {
         const d = await r.json();
         if (d.initialized !== true) throw new Error('initialized !== true');
         state.deployments = d;
+        await loadDeployedContracts();
         els.deploymentsBanner.hidden = true;
         logActivity(`Deployments loaded: pool=${shortAddress(d.pool, 8, 6)}`);
         return true;
@@ -208,6 +211,18 @@ async function renderForCurrentAccount() {
         return;
     }
     state.activeOrg = org;
+
+    // Re-derive keys if org exists but session cache is empty (post-refresh scenario).
+    if (org && !getCachedOrgKeys(state.wallet.address)) {
+        logActivity('Org found — re-deriving keys from Freighter (2 prompts)...');
+        try {
+            const keys = await deriveOrgKeysFromFreighter({ onStatus: logActivity });
+            setCachedOrgKeys(state.wallet.address, keys);
+            logActivity('Keys restored to session cache.');
+        } catch (e) {
+            logActivity(`Key re-derivation failed: ${e.message}`);
+        }
+    }
 
     if (!org) {
         els.orgBootstrapCard.hidden = false;
@@ -351,10 +366,43 @@ async function handleDeposit() {
     els.depositBtnText.textContent = 'Depositing\u2026';
 
     try {
+        logActivity('Fetching on-chain roots...');
+        logActivity('Syncing ASP membership tree...');
+        try {
+            const leafsBefore = await StateManager.getASPMembershipLeafCount();
+            console.log('[Enclave] ASP leaves BEFORE clearAll:', leafsBefore);
+            logActivity('Clearing stale ASP membership data...');
+            await StateManager.clearAll();
+            const leafsAfterClear = await StateManager.getASPMembershipLeafCount();
+            console.log('[Enclave] ASP leaves AFTER clearAll:', leafsAfterClear);
+            await StateManager.startSync({ forceRefresh: true });
+            const leafsAfterSync = await StateManager.getASPMembershipLeafCount();
+            const localRoot = StateManager.getASPMembershipRoot();
+            console.log('[Enclave] ASP leaves AFTER sync:', leafsAfterSync, '| local root:', localRoot?.toString());
+        } catch (e) {
+            console.warn('[Enclave] StateManager sync failed (non-fatal):', e);
+        }
+        const [poolState, membershipState, nonMembershipState] = await Promise.all([
+            readPoolState(),
+            readASPMembershipState(),
+            readASPNonMembershipState(),
+        ]);
+        console.log('[Enclave] on-chain roots — pool:', poolState.merkleRoot, '| membership:', membershipState.root, '| nonMembership:', nonMembershipState.root);
+        if (!poolState.success || !membershipState.success || !nonMembershipState.success) {
+            throw new Error('Failed to read on-chain contract state');
+        }
+        const rootsSnapshot = {
+            poolRoot:          BigInt(poolState.merkleRoot      || '0x0'),
+            membershipRoot:    BigInt(membershipState.root      || '0x0'),
+            nonMembershipRoot: BigInt(nonMembershipState.root   || '0x0'),
+        };
+
         const result = await depositForOrg({
             adminAddress: state.wallet.address,
             amountStroops,
             deployments: state.deployments,
+            rootsSnapshot,
+            stateManager: StateManager,
             signerOptions: buildSignerOptions(),
             onStatus: logActivity,
         });
@@ -365,7 +413,8 @@ async function handleDeposit() {
         }
         await renderForCurrentAccount();
     } catch (e) {
-        const msg = e.message || String(e);
+        console.error('[Enclave] Deposit error (raw):', e);
+        const msg = e instanceof Error ? e.message : (e?.message || e?.type || JSON.stringify(e) || String(e));
         showToast(`Could not deposit: ${msg}`, 'error');
         logActivity(`Deposit failed: ${msg}`);
     } finally {
@@ -455,6 +504,11 @@ async function init() {
         await initProverWasm();
     } catch (e) {
         console.warn('[Enclave] prover WASM init failed (non-fatal):', e);
+    }
+    try {
+        await StateManager.initialize();
+    } catch (e) {
+        console.warn('[Enclave] StateManager init failed (non-fatal):', e);
     }
     els.connectBtn.addEventListener('click', handleConnect);
     els.createOrgBtn.addEventListener('click', handleCreateOrg);

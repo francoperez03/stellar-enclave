@@ -199,7 +199,20 @@ async function handleProve(data, messageId) {
         console.log('[Worker] Extracting public inputs...');
         const publicInputsBytes = extractPublicInputs(witnessBytes);
         console.log(`[Worker] Public inputs extracted: ${publicInputsBytes?.length || 0} bytes`);
-        
+
+        // Step 4: Local proof verification (diagnostic)
+        try {
+            const compressedBytes = generateProofBytes(witnessBytes);
+            const locallyValid = verifyProofLocal(compressedBytes, publicInputsBytes);
+            console.log('[Worker] Local proof valid:', locallyValid);
+            if (!locallyValid) {
+                console.error('[Worker] PROOF LOCALLY INVALID — R1CS constraints not satisfied!');
+                console.error('[Worker] Likely cause: Poseidon2 hash mismatch or bad membership path elements');
+            }
+        } catch (localErr) {
+            console.error('[Worker] Local verification error:', localErr?.message || String(localErr));
+        }
+
         // Convert to arrays for serialization
         const proofArray = Array.from(proofBytes);
         const publicInputsArray = Array.from(publicInputsBytes);

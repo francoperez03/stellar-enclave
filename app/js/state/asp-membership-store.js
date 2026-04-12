@@ -19,7 +19,11 @@ import {
 
 // Alias for backwards compatibility
 const ASP_MEMBERSHIP_TREE_DEPTH = TREE_DEPTH;
-const ZERO_LEAF_HEX = getZeroLeaf();
+let _zeroLeafHex;
+function getZeroLeafHex() {
+    if (_zeroLeafHex === undefined) _zeroLeafHex = getZeroLeaf();
+    return _zeroLeafHex;
+}
 let merkleTree = null;
 
 /**
@@ -37,8 +41,8 @@ let merkleTree = null;
  */
 export async function init() {
     // Initialize tree with contract's zero leaf value (poseidon2("XLM"))
-    console.log(`[ASPMembershipStore] Initializing with ZERO_LEAF_HEX: ${ZERO_LEAF_HEX}`);
-    const zeroLeafLE = hexToBytesForTree(ZERO_LEAF_HEX);
+    console.log(`[ASPMembershipStore] Initializing with getZeroLeafHex(): ${getZeroLeafHex()}`);
+    const zeroLeafLE = hexToBytesForTree(getZeroLeafHex());
     
     merkleTree = createMerkleTreeWithZeroLeaf(ASP_MEMBERSHIP_TREE_DEPTH, zeroLeafLE);
     
@@ -241,7 +245,7 @@ export async function findLeafByHash(leafHash) {
  */
 export async function clear() {
     await db.clear('asp_membership_leaves');
-    const zeroLeaf = hexToBytesForTree(ZERO_LEAF_HEX);
+    const zeroLeaf = hexToBytesForTree(getZeroLeafHex());
     merkleTree = createMerkleTreeWithZeroLeaf(ASP_MEMBERSHIP_TREE_DEPTH, zeroLeaf);
     console.log('[ASPMembershipStore] Cleared all data');
 }

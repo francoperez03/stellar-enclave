@@ -64,4 +64,5 @@ cp target/wasm-bindgen/release/prover_bg.wasm $TRUNK_STAGING_DIR/js/enclave/prov
 mkdir -p $TRUNK_STAGING_DIR/js/enclave/witness
 cp target/wasm-witness/witness.js $TRUNK_STAGING_DIR/js/enclave/witness/witness.js 2>/dev/null || true
 cp target/wasm-witness/witness_bg.wasm $TRUNK_STAGING_DIR/js/enclave/witness/witness_bg.wasm 2>/dev/null || true
+cp $TRUNK_STAGING_DIR/js/worker.js $TRUNK_STAGING_DIR/js/enclave/worker.js 2>/dev/null || true
 """]

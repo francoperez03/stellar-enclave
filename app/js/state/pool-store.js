@@ -19,7 +19,11 @@ import {
 
 // Alias for backwards compatibility
 const POOL_TREE_DEPTH = TREE_DEPTH;
-const ZERO_LEAF_HEX = getZeroLeaf();
+let _zeroLeafHex;
+function getZeroLeafHex() {
+    if (_zeroLeafHex === undefined) _zeroLeafHex = getZeroLeaf();
+    return _zeroLeafHex;
+}
 
 let merkleTree = null;
 
@@ -60,7 +64,7 @@ export async function init() {
  */
 export async function rebuildTree() {
     // Initialize tree with contract's zero leaf value (poseidon2("XLM"))
-    const zeroLeaf = hexToBytesForTree(ZERO_LEAF_HEX);
+    const zeroLeaf = hexToBytesForTree(getZeroLeafHex());
     merkleTree = createMerkleTreeWithZeroLeaf(POOL_TREE_DEPTH, zeroLeaf);
     
     // Use cursor to iterate leaves in index order without loading all into memory
@@ -270,7 +274,7 @@ export async function clear() {
     await db.clear('pool_leaves');
     await db.clear('pool_nullifiers');
     await db.clear('pool_encrypted_outputs');
-    const zeroLeaf = hexToBytesForTree(ZERO_LEAF_HEX);
+    const zeroLeaf = hexToBytesForTree(getZeroLeafHex());
     merkleTree = createMerkleTreeWithZeroLeaf(POOL_TREE_DEPTH, zeroLeaf);
     console.log('[PoolStore] Cleared all data');
 }
