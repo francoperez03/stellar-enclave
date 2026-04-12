@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
-current_plan: 03
-status: in_progress
-stopped_at: Completed 03-agent-sdk-enclave-agent Plan 02 (config loader + pino logger SDK-05/SDK-06)
-last_updated: "2026-04-12T21:09:14.598Z"
+current_plan: 4
+status: executing
+stopped_at: Completed 03-agent-sdk-enclave-agent/03-03-PLAN.md (WASM prover wrapper — SDK-02/03/04 green, 6/6 tests passing)
+last_updated: "2026-04-12T21:12:32.169Z"
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 24
-  completed_plans: 18
+  completed_plans: 20
 ---
 
 # Session State
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md
 
 **Milestone:** v1.0 milestone
 **Current phase:** 03-agent-sdk-enclave-agent
-**Current Plan:** 03 (Wave 1 — WASM prover wrapper, RED committed in 320b3f7)
+**Current Plan:** 4
 **Total Plans in Phase:** 5
-**Status:** In Progress — plans 03-01 (infra + stubs) and 03-02 (config + logger) complete; 03-03/04/05 remaining
+**Status:** Ready to execute
 
 ## Progress
 
@@ -59,6 +59,8 @@ Overall milestone: 3/7 phases complete, 18/24 plans complete.
 | Phase 02-facilitator-bridge P08 | 45min | 2 tasks | 8 files |
 | Phase 02-facilitator-bridge P08 | ~45min | 3 tasks | 8 files |
 | Phase 03-agent-sdk-enclave-agent P02 | 2 min | 2 tasks | 2 files |
+| Phase 03-agent-sdk-enclave-agent P01 | ~60 min | 2 tasks | 13 files |
+| Phase 03-agent-sdk-enclave-agent P03 | 4 min | 1 tasks | 1 files |
 
 ## Decisions
 
@@ -120,6 +122,14 @@ Overall milestone: 3/7 phases complete, 18/24 plans complete.
 - [Phase 03-agent-sdk-enclave-agent]: Pino redact paths array lock (11 entries): flat + wildcards + bundle.* variants for defense against logger.info({ bundle }) leaks. censor: '[Redacted]' sentinel for uniform test assertions.
 - [Phase 03-agent-sdk-enclave-agent]: createLogger(stream?) factory pattern for pino — DI-friendly test capture via Writable stream; production uses bare logger singleton. Keeps stdout untouched by tests.
 - [Phase 03-agent-sdk-enclave-agent]: Workspace jest invocation must run from package dir (cd packages/agent && npx jest) — repo-root invocation picks up app/babel.config.cjs which breaks TS parsing. Future plans should use 'npm -w @enclave/agent test'.
+- [Phase 03-01]: Plan 03-01 Wave-0 scaffolding: ESM ts-jest preset with moduleNameMapper .js -> .ts rewrite so TypeScript tests import source via .js-suffixed specifiers (matches agent's type:module package)
+- [Phase 03-01]: EnclavePaymentError.reason union includes 'already_spent' (C6) so the facilitator HTTP 409 nullifier-replay case is a first-class error at the agent fetch surface
+- [Phase 03-01]: ExtData field names are snake_case (ext_amount, encrypted_output0/1) to match ExtDataWireFormat in @enclave/core — wire conversion is pure typeof narrowing with zero rename maps
+- [Phase 03-01]: Deviation: Plan 03-03 initially wrote prover.test.ts against vitest (unavailable) — fixed to @jest/globals. Also prepended NODE_OPTIONS=--experimental-vm-modules to npm test scripts so ts-jest ESM preset loads. Both necessary for Plan 03-01's 'jest exits 0' verify step.
+- [Phase 03-agent-sdk-enclave-agent]: 03-03 GREEN-first TDD: prover.ts full implementation was pre-committed in 29a94e0 (Plan 03-01 Task 2 labeled stubs); RED tests in 320b3f7 pre-satisfied. Plan 03-03 reduced to housekeeping (remove orphan vitest.config.ts). SDK-02/03/04 green via 6-test Jest ESM suite.
+- [Phase 03-agent-sdk-enclave-agent]: 03-03 createRequire(import.meta.url) is the only viable loader for wasm-pack --target nodejs output from an ESM package; direct import() fails. Pattern baked into loadProverArtifacts + derivePublicKey.
+- [Phase 03-agent-sdk-enclave-agent]: 03-03 Jest ESM preset requires NODE_OPTIONS=--experimental-vm-modules; baked into packages/agent package.json test scripts so npm test --workspace works without caller awareness.
+- [Phase 03-agent-sdk-enclave-agent]: 03-03 ProveResult returns BOTH compressed proofBytes (128B) and decomposed proofComponents (a:64 + b:128 + c:64) from one prove() call via proof_bytes_to_uncompressed; callers never re-run the decomposition.
 
 ## Blockers
 
@@ -137,7 +147,7 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T21:09:11.980Z
-**Stopped at:** Completed 03-agent-sdk-enclave-agent Plan 02 (config loader + pino logger SDK-05/SDK-06)
+**Last session:** 2026-04-12T21:12:32.167Z
+**Stopped at:** Completed 03-agent-sdk-enclave-agent/03-03-PLAN.md (WASM prover wrapper — SDK-02/03/04 green, 6/6 tests passing)
 **Resume file:** None
 **Next action:** Execute 03-03-PLAN.md (Wave 1 — WASM prover wrapper via createRequire, prove() returning 128-byte proof, derivePublicKey — SDK-02, SDK-03, SDK-04). RED tests already committed in `320b3f7`. Downstream: 03-04 (witness inputs / Model X), 03-05 (fetch interceptor + note selector + createAgent wiring).
