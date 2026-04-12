@@ -1,4 +1,342 @@
-// Phase 3 Plan 05 target — 402 intercepting fetch
-export async function createInterceptingFetch(_config: unknown): Promise<(url: string, init?: RequestInit) => Promise<Response>> {
-  throw new Error('@enclave/agent fetch-interceptor: Phase 3 Plan 05 target');
+// 402-intercepting fetch implementation for @enclave/agent.
+// SDK-01: drop-in agent.fetch() that transparently handles x402 payment flow.
+// Fixture mode: when fixturePath is set and URL matches, WASM prover is bypassed (OPS-03).
+//
+// Flow:
+//   request -> if 402 -> parse paymentRequirements -> selectNote ->
+//   (fixture hit? use cached proof : live prove) -> POST /settle ->
+//   retry original with X-PAYMENT header -> return final response.
+//
+// Error taxonomy (EnclavePaymentError.reason):
+//   - 'no_funds'             : no single note covers maxAmountRequired
+//   - 'proof_failed'         : live prover threw
+//   - 'already_spent'        : /settle returned 409 (nullifier replay — C6)
+//   - 'facilitator_rejected' : /settle returned non-200/409
+//   - 'retry_402'            : retry after settlement still returned 402
+
+import { readFile } from 'node:fs/promises';
+import { EnclavePaymentError } from './types.js';
+import type { FixtureIndex, ExtData, EnclaveNote, AgentBundle } from './types.js';
+import { selectNote } from './note-selector.js';
+import {
+  loadProverArtifacts as defaultLoadProverArtifacts,
+  prove as defaultProve,
+  buildWitnessInputs,
+} from './prover.js';
+import type { ProverHandle, ProveResult, NonMembershipProof } from './prover.js';
+import { createLogger } from './logger.js';
+import { hashExtData } from './utils/extDataHash.js';
+
+/** Injected prover dependencies — allows tests to stub without monkey-patching ESM modules. */
+export interface ProverDeps {
+  prove: (handle: ProverHandle, witnessInputsJson: string) => Promise<ProveResult>;
+  loadProverArtifacts: (artifactsPath: string) => Promise<ProverHandle>;
+}
+
+export interface InterceptingFetchConfig {
+  bundle: AgentBundle;
+  notes: EnclaveNote[];
+  provingArtifactsPath: string;
+  fixturePath?: string;
+  /** Optional log stream — used by tests to silence pino output */
+  logStream?: NodeJS.WritableStream;
+  /** Optional prover dependency injection — defaults to real prover module */
+  proverDeps?: ProverDeps;
+}
+
+/** Minimal x402 paymentRequirements shape from 402 response body */
+interface PaymentRequirements {
+  payTo: string;
+  maxAmountRequired: string; // decimal string in stroops
+  resource: string;
+  nonce: string;
+}
+
+function parsePaymentRequirements(body: unknown): PaymentRequirements {
+  const pr = body as Record<string, unknown>;
+  if (!pr['payTo'] || !pr['maxAmountRequired']) {
+    throw new Error('Invalid x402 paymentRequirements: missing payTo or maxAmountRequired');
+  }
+  return {
+    payTo: pr['payTo'] as string,
+    maxAmountRequired: String(pr['maxAmountRequired']),
+    resource: (pr['resource'] ?? '') as string,
+    nonce: (pr['nonce'] ?? '') as string,
+  };
+}
+
+/** Build a 112-byte encrypted output placeholder (Pitfall 8 format-parity: POOL-04).
+ *  Real implementation would ECIES-encrypt output commitments; MVP uses random bytes
+ *  since all 112-byte outputs are indistinguishable at the pool contract layer. */
+function dummyEncryptedOutput(): Uint8Array {
+  const buf = new Uint8Array(112);
+  for (let i = 0; i < 112; i++) buf[i] = Math.floor(Math.random() * 256);
+  return buf;
+}
+
+/** Build ExtData for pool.transact — withdrawal path (ext_amount < 0) */
+function buildExtData(payTo: string, payAmount: bigint): ExtData {
+  return {
+    recipient: payTo,
+    ext_amount: -payAmount, // snake_case, negative = withdrawal from pool to recipient
+    encrypted_output0: dummyEncryptedOutput(),
+    encrypted_output1: dummyEncryptedOutput(),
+  };
+}
+
+/** Hex-encode a Uint8Array to string (for wire format) */
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+/** Hex-decode a string to Uint8Array (for reading hex fields from fixture JSON) */
+function fromHex(hex: string): Uint8Array {
+  const s = hex.replace(/^0x/, '');
+  const out = new Uint8Array(s.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}
+
+/** Empty SMT non-membership proofs for the empty banlist (POOL-07) */
+function emptyNonMembershipProofs(): [NonMembershipProof, NonMembershipProof] {
+  const empty: NonMembershipProof = {
+    root: '0',
+    siblings: Array(32).fill('0') as string[],
+    oldKey: '0',
+    oldValue: '0',
+    isOld0: '1',
+    key: '0',
+    value: '0',
+    fnc: '1',
+  };
+  return [empty, empty];
+}
+
+/**
+ * Normalize a fixture ExtData entry into the internal ExtData representation.
+ * Fixture JSON may encode Uint8Array fields as either hex strings or number arrays
+ * (JSON.stringify(Uint8Array) emits an object, so real fixtures serialize via Array.from).
+ */
+function normalizeFixtureExtData(raw: Record<string, unknown>): ExtData {
+  const e0 = raw['encrypted_output0'];
+  const e1 = raw['encrypted_output1'];
+  return {
+    recipient: raw['recipient'] as string,
+    ext_amount: BigInt(raw['ext_amount'] as string | number),
+    encrypted_output0: Array.isArray(e0) ? Uint8Array.from(e0 as number[]) : fromHex(e0 as string),
+    encrypted_output1: Array.isArray(e1) ? Uint8Array.from(e1 as number[]) : fromHex(e1 as string),
+  };
+}
+
+/** Extract decomposed proof components (a/b/c) from a fixture ShieldedProof entry.
+ *  The fixture's `proof.proof` field is the 256-byte uncompressed Groth16 proof. */
+function decomposeFixtureProof(proofArr: number[]): { a: Uint8Array; b: Uint8Array; c: Uint8Array } {
+  const bytes = Uint8Array.from(proofArr);
+  return {
+    a: bytes.slice(0, 64),
+    b: bytes.slice(64, 192),
+    c: bytes.slice(192, 256),
+  };
+}
+
+/**
+ * Create an intercepting fetch function that handles x402 payment flows.
+ */
+export async function createInterceptingFetch(
+  config: InterceptingFetchConfig,
+): Promise<(url: string, init?: RequestInit) => Promise<Response>> {
+  const log = createLogger(config.logStream);
+  const { bundle, notes, provingArtifactsPath, fixturePath } = config;
+  const proverDeps: ProverDeps = config.proverDeps ?? {
+    prove: defaultProve,
+    loadProverArtifacts: defaultLoadProverArtifacts,
+  };
+  const spentNullifiers = new Set<string>();
+
+  // Load fixture index if configured (OPS-03: pre-generated proofs for demo recording)
+  let fixtureIndex: FixtureIndex | null = null;
+  if (fixturePath) {
+    try {
+      const raw = await readFile(fixturePath, 'utf-8');
+      fixtureIndex = JSON.parse(raw) as FixtureIndex;
+      log.info({ fixturePath }, 'fixture index loaded');
+    } catch {
+      log.warn({ fixturePath }, 'fixture file not readable — falling back to live proving');
+    }
+  }
+
+  // Load prover artifacts lazily only when needed (avoids startup cost for fixture-only mode)
+  let proverHandle: ProverHandle | null = null;
+  async function getProver(): Promise<ProverHandle> {
+    if (!proverHandle) {
+      proverHandle = await proverDeps.loadProverArtifacts(provingArtifactsPath);
+    }
+    return proverHandle;
+  }
+
+  return async function interceptingFetch(url: string, init?: RequestInit): Promise<Response> {
+    // First request — no payment header
+    const resp1 = await globalThis.fetch(url, init);
+
+    if (resp1.status !== 402) {
+      return resp1;
+    }
+
+    log.info({ orgId: bundle.orgId, url, phase: 'settle' }, '402 received — initiating payment');
+
+    // Parse x402 payment requirements from 402 body
+    const body402 = (await resp1.json()) as unknown;
+    const payReqs = parsePaymentRequirements(body402);
+    const payAmount = BigInt(payReqs.maxAmountRequired);
+
+    // Select note (greedy smallest-sufficient)
+    const note = selectNote(notes, payAmount, spentNullifiers);
+    if (!note) {
+      log.warn({ orgId: bundle.orgId, url, phase: 'prove' }, 'no_funds — no note covers amount');
+      throw new EnclavePaymentError({ reason: 'no_funds' });
+    }
+
+    // Resolve proof (fixture or live prover)
+    let proofPayload: {
+      proof: { a: Uint8Array; b: Uint8Array; c: Uint8Array };
+      extData: ExtData;
+      nullifier: string;
+    };
+
+    const fixtureEntry = fixtureIndex?.[url];
+    if (fixtureEntry) {
+      // Fixture mode: skip WASM prover (SDK-03 / OPS-03 pre-generated proof)
+      log.info({ url, phase: 'prove' }, 'fixture cache hit — using pre-generated proof');
+      const fxProof = fixtureEntry.proof as unknown as { proof: number[] };
+      const fxExt = fixtureEntry.extData as unknown as Record<string, unknown>;
+      proofPayload = {
+        proof: decomposeFixtureProof(fxProof.proof),
+        extData: normalizeFixtureExtData(fxExt),
+        nullifier: fixtureEntry.note.nullifier,
+      };
+    } else {
+      if (fixtureIndex !== null) {
+        log.warn({ url, phase: 'prove' }, 'fixture cache miss — falling back to live proving');
+      }
+
+      // Live proving
+      const extData = buildExtData(payReqs.payTo, payAmount);
+      const changeAmount = note.amount - payAmount;
+      const extDataHashResult = hashExtData(extData);
+
+      // Build witness inputs with Model X invariant (SDK-07)
+      // Null slot: prefer a zero-amount note from notes.json. If none exists,
+      // reuse the real note (the prover will still pass if both pubkeys are in asp-membership).
+      const nullNote = notes.find((n) => n.amount === BigInt(0)) ?? note;
+
+      const witnessInputs = buildWitnessInputs({
+        orgSpendingPrivKey: bundle.orgSpendingPrivKey,
+        realNote: note,
+        nullNote,
+        payAmount,
+        changeAmount,
+        changeBlinding: '0', // MVP: deterministic zero change blinding
+        extDataHash: extDataHashResult.decimal,
+        nonMembershipProofs: emptyNonMembershipProofs(),
+      });
+
+      let proveResult: ProveResult;
+      try {
+        const prover = await getProver();
+        proveResult = await proverDeps.prove(prover, JSON.stringify(witnessInputs));
+        spentNullifiers.add(note.nullifier);
+        log.info({ orgId: bundle.orgId, url, phase: 'prove' }, 'proof generated');
+      } catch {
+        log.error({ orgId: bundle.orgId, url, phase: 'prove' }, 'proof generation failed');
+        throw new EnclavePaymentError({ reason: 'proof_failed' });
+      }
+
+      proofPayload = {
+        proof: proveResult.proofComponents,
+        extData,
+        nullifier: note.nullifier,
+      };
+    }
+
+    // Build proof wire format (C3): flat { a, b, c } as hex strings (NOT nested)
+    const proofWire = {
+      a: toHex(proofPayload.proof.a),
+      b: toHex(proofPayload.proof.b),
+      c: toHex(proofPayload.proof.c),
+      // Additional public inputs — the facilitator re-derives most of these from
+      // the witness public-input bytes, but the wire format requires the shape.
+      // Callers expecting on-chain submission must populate them from witness;
+      // for MVP the settle route derives them server-side from publicInputBytes
+      // (Phase 2 02-RESEARCH confirms this). Left as empty strings to satisfy
+      // the ShieldedProofWireFormat shape.
+    };
+
+    // Build extData wire format (C2): snake_case, 0-based, hex-encoded strings
+    const extDataWire = {
+      recipient: proofPayload.extData.recipient,
+      ext_amount: proofPayload.extData.ext_amount.toString(),
+      encrypted_output0: toHex(proofPayload.extData.encrypted_output0),
+      encrypted_output1: toHex(proofPayload.extData.encrypted_output1),
+    };
+
+    // POST /settle to facilitator (C1: paymentPayload wrapper with scheme field)
+    // M3: Authorization header sent but NOT validated by facilitator (forward-compat only)
+    log.info({ orgId: bundle.orgId, url, phase: 'settle' }, 'posting to facilitator /settle');
+    const settleResp = await globalThis.fetch(`${bundle.facilitatorUrl}/settle`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bundle.agentAuthKey}`,
+      },
+      body: JSON.stringify({
+        paymentPayload: {
+          scheme: 'shielded-exact',
+          proof: proofWire,
+          extData: extDataWire,
+        },
+        paymentRequirements: payReqs,
+      }),
+    });
+
+    // C6: 409 = already_spent (nullifier replay), not generic rejection
+    if (settleResp.status === 409) {
+      log.warn({ orgId: bundle.orgId, url, phase: 'settle' }, 'already_spent — nullifier replayed');
+      throw new EnclavePaymentError({
+        reason: 'already_spent',
+        nullifier: proofPayload.nullifier,
+      });
+    }
+
+    if (!settleResp.ok) {
+      const settleBody = await settleResp.json().catch(() => null);
+      log.error({ orgId: bundle.orgId, url, phase: 'settle' }, 'facilitator rejected');
+      throw new EnclavePaymentError({
+        reason: 'facilitator_rejected',
+        nullifier: proofPayload.nullifier,
+        facilitatorResponse: settleBody,
+      });
+    }
+
+    // C5: response field is "transaction", not "txHash"
+    const settleJson = (await settleResp.json()) as { transaction: string };
+    const txHash = settleJson.transaction;
+    log.info({ orgId: bundle.orgId, url, phase: 'retry', txHash }, 'settlement confirmed — retrying');
+
+    // Retry original request with X-PAYMENT header
+    const resp2 = await globalThis.fetch(url, {
+      ...init,
+      headers: {
+        ...(init?.headers instanceof Headers
+          ? Object.fromEntries(init.headers.entries())
+          : ((init?.headers as Record<string, string> | undefined) ?? {})),
+        'X-PAYMENT': txHash,
+      },
+    });
+
+    if (resp2.status === 402) {
+      throw new EnclavePaymentError({ reason: 'retry_402', nullifier: proofPayload.nullifier });
+    }
+
+    return resp2;
+  };
 }

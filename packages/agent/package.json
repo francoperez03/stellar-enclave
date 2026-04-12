@@ -15,6 +15,8 @@
   },
   "dependencies": {
     "@enclave/core": "*",
+    "@noble/hashes": "^2.0.1",
+    "@stellar/stellar-sdk": "14.4.2",
     "pino": "^10.3.1"
   },
   "devDependencies": {

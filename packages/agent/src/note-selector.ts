@@ -32,5 +32,6 @@ export function selectNote(
   // Sort ascending by amount; pick the smallest sufficient note
   eligible.sort((a, b) => (a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0));
 
-  return eligible[0];
+  // Non-null assertion safe: eligible.length > 0 checked above
+  return eligible[0] ?? null;
 }

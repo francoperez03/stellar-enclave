@@ -19,6 +19,10 @@ function silentStream(): NodeJS.WritableStream {
   }) as unknown as NodeJS.WritableStream;
 }
 
+// Valid Stellar G... address required by @stellar/stellar-sdk's Address.fromString()
+// (used inside hashExtData during the live-proving path).
+const VALID_STELLAR_ADDR = 'GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI';
+
 const BASE_CONFIG = {
   bundle: {
     orgSpendingPrivKey: 'deadbeef'.repeat(8),
@@ -125,13 +129,14 @@ describe('agent.fetch() intercept (SDK-01)', () => {
     const { createInterceptingFetch } = await import('../fetch-interceptor.js');
     const { EnclavePaymentError } = await import('../types.js');
 
-    const mockFetch = jest.fn<typeof fetch>().mockResolvedValue(
-      mockResponse(402, {
-        payTo: 'GBTEST123',
+    // Each call returns a fresh Response (bodies can only be consumed once)
+    const mockFetch = jest.fn<typeof fetch>().mockImplementation(() =>
+      Promise.resolve(mockResponse(402, {
+        payTo: VALID_STELLAR_ADDR,
         maxAmountRequired: '99999999',
         resource: 'https://example.com',
         nonce: 'abc',
-      }),
+      })),
     );
     globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -146,7 +151,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
   it('attaches Authorization: Bearer <authKey> to /settle POST (M3)', async () => {
     const mockFetch = jest.fn<typeof fetch>()
       .mockResolvedValueOnce(mockResponse(402, {
-        payTo: 'GBTEST123',
+        payTo: VALID_STELLAR_ADDR,
         maxAmountRequired: '100',
         resource: 'https://example.com/r',
         nonce: 'nonce1',
@@ -163,7 +168,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
       (args) => (args[0] as string).includes('/settle'),
     );
     expect(settleCalls.length).toBe(1);
-    const settleInit = settleCalls[0][1] as RequestInit;
+    const settleInit = settleCalls[0]![1] as RequestInit;
     const headers = settleInit.headers as Record<string, string>;
     expect(headers['Authorization']).toBe(`Bearer ${BASE_CONFIG.bundle.agentAuthKey}`);
   });
@@ -171,7 +176,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
   it('retries original request with X-PAYMENT header containing txHash from /settle (C5)', async () => {
     const TX_HASH = 'stellarTxHash_abc123';
     const mockFetch = jest.fn<typeof fetch>()
-      .mockResolvedValueOnce(mockResponse(402, { payTo: 'GX', maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
       .mockResolvedValueOnce(mockResponse(200, { success: true, transaction: TX_HASH, network: 'testnet' }))
       .mockResolvedValueOnce(mockResponse(200, { result: 'paid' }));
     globalThis.fetch = mockFetch as unknown as typeof fetch;
@@ -185,7 +190,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
              && (args[1] as RequestInit | undefined)?.headers !== undefined,
     );
     expect(retryCalls.length).toBeGreaterThan(0);
-    const retryInit = retryCalls[retryCalls.length - 1][1] as RequestInit;
+    const retryInit = retryCalls[retryCalls.length - 1]![1] as RequestInit;
     const headers = retryInit.headers as Record<string, string>;
     expect(headers['X-PAYMENT']).toBe(TX_HASH);
   });
@@ -193,7 +198,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
   it('POSTs /settle with paymentPayload wrapper and snake_case extData (C1, C2, C3)', async () => {
     const mockFetch = jest.fn<typeof fetch>()
       .mockResolvedValueOnce(mockResponse(402, {
-        payTo: 'GBTEST123CCCCDDDDEEEEFFFFAAAABBBB11112222333344445555',
+        payTo: VALID_STELLAR_ADDR,
         maxAmountRequired: '100',
         resource: 'r',
         nonce: 'n',
@@ -229,7 +234,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
 
   it('throws EnclavePaymentError({ reason: "already_spent" }) when /settle returns HTTP 409 (C6)', async () => {
     const mockFetch = jest.fn<typeof fetch>()
-      .mockResolvedValueOnce(mockResponse(402, { payTo: 'GX', maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
       .mockResolvedValueOnce(mockResponse(409, { success: false, errorReason: 'already_spent' }));
     globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -244,7 +249,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
 
   it('throws EnclavePaymentError({ reason: "facilitator_rejected" }) when /settle returns non-200/409', async () => {
     const mockFetch = jest.fn<typeof fetch>()
-      .mockResolvedValueOnce(mockResponse(402, { payTo: 'GX', maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
       .mockResolvedValueOnce(mockResponse(500, { error: 'internal_error' }));
     globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -258,7 +263,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
 
   it('throws EnclavePaymentError({ reason: "retry_402" }) when retry still returns 402', async () => {
     const mockFetch = jest.fn<typeof fetch>()
-      .mockResolvedValueOnce(mockResponse(402, { payTo: 'GX', maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
       .mockResolvedValueOnce(mockResponse(200, { success: true, transaction: 'tx', network: 'testnet' }))
       .mockResolvedValueOnce(mockResponse(402, {}));
     globalThis.fetch = mockFetch as unknown as typeof fetch;
@@ -293,7 +298,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
           aspNonMembershipRoot: '0',
         },
         extData: {
-          recipient: 'GTEST',
+          recipient: VALID_STELLAR_ADDR,
           ext_amount: '-100',
           encrypted_output0: Array(112).fill(0),
           encrypted_output1: Array(112).fill(0),
@@ -305,7 +310,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
     const proverDeps = makeProverDeps();
 
     const mockFetch = jest.fn<typeof fetch>()
-      .mockResolvedValueOnce(mockResponse(402, { payTo: 'GTEST', maxAmountRequired: '100', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '100', resource: 'r', nonce: 'n' }))
       .mockResolvedValueOnce(mockResponse(200, { success: true, transaction: 'tx1', network: 'testnet' }))
       .mockResolvedValueOnce(mockResponse(200, { result: 'ok' }));
     globalThis.fetch = mockFetch as unknown as typeof fetch;
@@ -341,7 +346,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
           aspNonMembershipRoot: '0',
         },
         extData: {
-          recipient: 'G',
+          recipient: VALID_STELLAR_ADDR,
           ext_amount: '0',
           encrypted_output0: Array(112).fill(0),
           encrypted_output1: Array(112).fill(0),
@@ -353,7 +358,7 @@ describe('agent.fetch() intercept (SDK-01)', () => {
     const proverDeps = makeProverDeps();
 
     const mockFetch = jest.fn<typeof fetch>()
-      .mockResolvedValueOnce(mockResponse(402, { payTo: 'GX', maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '50', resource: 'r', nonce: 'n' }))
       .mockResolvedValueOnce(mockResponse(200, { success: true, transaction: 'tx2', network: 'testnet' }))
       .mockResolvedValueOnce(mockResponse(200, { result: 'ok' }));
     globalThis.fetch = mockFetch as unknown as typeof fetch;
