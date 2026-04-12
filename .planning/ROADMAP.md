@@ -313,7 +313,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 0. Setup & Day-1 De-risking | 5/5 | Complete | 2026-04-11 |
 | 1. Pool Integration & Multi-Org Namespace | 1/4 | In Progress | - |
-| 2. Facilitator Bridge | 0/TBD | Not started | - |
+| 2. Facilitator Bridge | 8/8 | Complete | 2026-04-12 |
 | 3. Agent SDK (`@enclave/agent`) | 0/TBD | Not started | - |
 | 4. Enclave Gate Middleware + Gated Endpoint | 0/2 | Planned | - |
 | 5. Dashboard + Ops Hardening | 0/TBD | Not started | - |

@@ -29,7 +29,7 @@ decisions:
 metrics:
   duration: "~45min"
   completed: "2026-04-11"
-  tasks_completed: 2
+  tasks_completed: 3
   tasks_deferred: 1
   tests_added: 22
   files_created: 7
@@ -46,8 +46,9 @@ metrics:
 |------|------|--------|-------|
 | 1 | Bootstrap CLI + gitignore + README | 6f7ce1e | bootstrap.ts, loadFixtureForE2e.ts, README.md, package.json, wallets/.gitignore, bootstrap.spec.ts |
 | 2 | Live testnet e2e + demo lock | 853fe8d | testnet.spec.ts, demoLock.spec.ts |
+| 3 | Human-run testnet bootstrap + live e2e (DEFERRED) | — | wallets/circuits/fixtures/e2e-proof.json pending Phase 3 |
 
-## Task 3: Checkpoint DEFERRED
+## Task 3: Checkpoint DEFERRED (approved-deferred 2026-04-11)
 
 **Branch selected:** DEFERRED — no Phase 3 fixture found at `wallets/circuits/fixtures/e2e-proof.json`.
 

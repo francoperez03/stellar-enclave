@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 01-pool-integration-multi-org-namespace
 current_plan: 4
 status: verifying
-stopped_at: "Checkpoint: 02-08-PLAN.md Task 3 - human-verify (branch DEFERRED, awaiting Phase 3 fixture)"
-last_updated: "2026-04-12T14:07:45.357Z"
+stopped_at: Completed 02-facilitator-bridge Phase 2 (02-08-PLAN.md) — all plans done, live e2e deferred to Phase 3
+last_updated: "2026-04-12T14:17:40.664Z"
 progress:
   total_phases: 7
   completed_phases: 3
@@ -55,6 +55,7 @@ Overall milestone: 1/7 phases complete.
 | Phase 02-facilitator-bridge P05 | 7 min | 2 tasks | 7 files |
 | Phase 02-facilitator-bridge P07 | 90min | 3 tasks | 12 files |
 | Phase 02-facilitator-bridge P08 | 45min | 2 tasks | 8 files |
+| Phase 02-facilitator-bridge P08 | ~45min | 3 tasks | 8 files |
 
 ## Decisions
 
@@ -110,6 +111,9 @@ Overall milestone: 1/7 phases complete.
 - [Phase 02-07]: FACIL-06 synchronous settlement: /settle awaits submitPoolTransaction to chain confirmation before responding — no fire-and-forget
 - [Phase 02-facilitator-bridge]: Bootstrap CLI uses raw 32-byte Ed25519 seed (mode 0o600) per CONTEXT.md D4; live e2e is DEFERRED until Phase 3 produces withdrawal fixture
 - [Phase 02-facilitator-bridge]: Demo lock uses canonical file mapping fallback so tests pass even without explicit FACIL-* IDs in test descriptions
+- [Phase 02-facilitator-bridge]: Bootstrap CLI uses raw 32-byte Ed25519 seed (mode 0o600) per CONTEXT.md D4; friendbot + Horizon balance read via injectable fetchFn
+- [Phase 02-facilitator-bridge]: Live e2e is DEFERRED — Phase 3 agent SDK must produce wallets/circuits/fixtures/e2e-proof.json before E2E_TESTNET=1 run is possible
+- [Phase 02-facilitator-bridge]: Demo lock uses canonical file mapping as fallback so tests pass even when spec files don't mention FACIL-* IDs explicitly
 
 ## Blockers
 
@@ -126,7 +130,7 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T14:07:45.355Z
-**Stopped at:** Checkpoint: 02-08-PLAN.md Task 3 - human-verify (branch DEFERRED, awaiting Phase 3 fixture)
+**Last session:** 2026-04-12T14:17:40.659Z
+**Stopped at:** Completed 02-facilitator-bridge Phase 2 (02-08-PLAN.md) — all plans done, live e2e deferred to Phase 3
 **Resume file:** None
 **Next action:** Begin 01-02 (`/gsd:execute-phase 1`) — next plan is multi-org namespacing (ORG_ID scoping on asp-membership + pool). Manual step before recording day: mikey USDC faucet drip at `https://faucet.circle.com/`, then re-run `scripts/seed-demo-accounts.sh` to complete the 1000 USDC transfer to user.
