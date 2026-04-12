@@ -23,6 +23,47 @@ function silentStream(): NodeJS.WritableStream {
 // (used inside hashExtData during the live-proving path).
 const VALID_STELLAR_ADDR = 'GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI';
 
+// Build a realistic 352-byte LE publicInputs fixture. Each 32-byte chunk is a distinct
+// LE field element. Chunks 7 & 8 must be equal (aspMembershipRoot duplicated) and chunks
+// 9 & 10 must be equal (aspNonMembershipRoot duplicated) per circuit invariant.
+function makePublicInputsFixture(): Uint8Array {
+  const out = new Uint8Array(352);
+  // Helper: write decimal value `i` into chunk[i]'s LE byte 0 (low-order byte)
+  // so decomposePublicInputs returns decimal string `String(i)` for that chunk.
+  // For chunks with duplicates (7/8 and 9/10), use the same value.
+  const chunkValues: number[] = [
+    1,    // chunk 0 — root
+    2,    // chunk 1 — publicAmount
+    3,    // chunk 2 — extDataHash (LE -> BE hex reverses byte order)
+    4,    // chunk 3 — inputNullifier[0]
+    5,    // chunk 4 — inputNullifier[1]
+    6,    // chunk 5 — outputCommitment0
+    7,    // chunk 6 — outputCommitment1
+    8,    // chunk 7 — membershipRoots[0][0]
+    8,    // chunk 8 — membershipRoots[1][0] — MUST equal chunk 7
+    9,    // chunk 9 — nonMembershipRoots[0][0]
+    9,    // chunk 10 — nonMembershipRoots[1][0] — MUST equal chunk 9
+  ];
+  for (let i = 0; i < 11; i++) {
+    out[i * 32] = chunkValues[i]!;
+  }
+  return out;
+}
+const MOCK_PUBLIC_INPUTS = makePublicInputsFixture();
+
+// Expected decomposed values, derived from MOCK_PUBLIC_INPUTS at test-time:
+const EXPECTED_DECOMPOSED = {
+  root: '1',
+  publicAmount: '2',
+  // Chunk 2 bytes: [03, 00, 00, ..., 00] (LE). BE reversal: [00, 00, ..., 00, 03] -> hex '0000...0003'
+  extDataHash: '00'.repeat(31) + '03',
+  inputNullifiers: ['4', '5'] as [string, string],
+  outputCommitment0: '6',
+  outputCommitment1: '7',
+  aspMembershipRoot: '8',
+  aspNonMembershipRoot: '9',
+};
+
 const BASE_CONFIG = {
   bundle: {
     orgSpendingPrivKey: 'deadbeef'.repeat(8),
@@ -76,7 +117,7 @@ const MOCK_PROVE_RESULT: ProveResult = {
     b: new Uint8Array(128).fill(0x02),
     c: new Uint8Array(64).fill(0x03),
   },
-  publicInputBytes: new Uint8Array(352).fill(0xee),
+  publicInputBytes: MOCK_PUBLIC_INPUTS,
   witnessBytes: new Uint8Array(64).fill(0xff),
 };
 
@@ -230,6 +271,23 @@ describe('agent.fetch() intercept (SDK-01)', () => {
     expect(typeof body.paymentPayload.proof.a).toBe('string');
     expect(typeof body.paymentPayload.proof.b).toBe('string');
     expect(typeof body.paymentPayload.proof.c).toBe('string');
+    // Phase 03.1: all 11 ShieldedProofWireFormat fields must be populated.
+    const proof = body.paymentPayload.proof as Record<string, unknown>;
+    expect(proof['root']).toBe(EXPECTED_DECOMPOSED.root);
+    expect(proof['publicAmount']).toBe(EXPECTED_DECOMPOSED.publicAmount);
+    expect(proof['extDataHash']).toBe(EXPECTED_DECOMPOSED.extDataHash);
+    expect(proof['extDataHash']).toMatch(/^[0-9a-f]{64}$/);
+    expect(Array.isArray(proof['inputNullifiers'])).toBe(true);
+    expect(proof['inputNullifiers']).toEqual(EXPECTED_DECOMPOSED.inputNullifiers);
+    expect(proof['outputCommitment0']).toBe(EXPECTED_DECOMPOSED.outputCommitment0);
+    expect(proof['outputCommitment1']).toBe(EXPECTED_DECOMPOSED.outputCommitment1);
+    expect(proof['aspMembershipRoot']).toBe(EXPECTED_DECOMPOSED.aspMembershipRoot);
+    expect(proof['aspNonMembershipRoot']).toBe(EXPECTED_DECOMPOSED.aspNonMembershipRoot);
+    // Every ShieldedProofWireFormat key must be a string (or string[] for inputNullifiers) — no undefined, no empty string
+    for (const k of ['root', 'publicAmount', 'extDataHash', 'outputCommitment0', 'outputCommitment1', 'aspMembershipRoot', 'aspNonMembershipRoot']) {
+      expect(typeof proof[k]).toBe('string');
+      expect(proof[k]).not.toBe('');
+    }
   });
 
   it('throws EnclavePaymentError({ reason: "already_spent" }) when /settle returns HTTP 409 (C6)', async () => {
@@ -368,6 +426,68 @@ describe('agent.fetch() intercept (SDK-01)', () => {
     await agentFetch('https://example.com/resource');
 
     expect(proverDeps.prove).toHaveBeenCalledTimes(1);
+
+    await rm(dir, { recursive: true });
+  });
+
+  it('fixture mode: populates all 8 ShieldedProofWireFormat public-input fields from fixture.publicInputs hex (Phase 03.1)', async () => {
+    const { writeFile, rm, mkdtemp } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+
+    const dir = await mkdtemp(join(tmpdir(), 'enclave-test-phase-03-1-'));
+    const fixturePath = join(dir, 'fixtures-wire.json');
+
+    // Build a 704-char hex fixture representing the same MOCK_PUBLIC_INPUTS vector.
+    const hex = Array.from(MOCK_PUBLIC_INPUTS, (v) => v.toString(16).padStart(2, '0')).join('');
+    expect(hex.length).toBe(704);
+
+    await writeFile(fixturePath, JSON.stringify({
+      'https://fixture.example.com/wire': {
+        proof: {
+          proof: Array(256).fill(0xaa),   // 256-byte uncompressed [A||B||C]
+        },
+        publicInputs: hex,                 // PRIMARY shape (matches wallets/circuits/fixtures/e2e-proof.json)
+        extData: {
+          recipient: VALID_STELLAR_ADDR,
+          ext_amount: '-100',
+          encrypted_output0: Array(112).fill(0),
+          encrypted_output1: Array(112).fill(0),
+        },
+        note: { commitment: 'c1', nullifier: 'null1' },
+      },
+    }));
+
+    const proverDeps = makeProverDeps();
+
+    const mockFetch = jest.fn<typeof fetch>()
+      .mockResolvedValueOnce(mockResponse(402, { payTo: VALID_STELLAR_ADDR, maxAmountRequired: '100', resource: 'r', nonce: 'n' }))
+      .mockResolvedValueOnce(mockResponse(200, { success: true, transaction: 'tx-wire', network: 'testnet' }))
+      .mockResolvedValueOnce(mockResponse(200, { result: 'ok' }));
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    const { createInterceptingFetch } = await import('../fetch-interceptor.js');
+    const agentFetch = await createInterceptingFetch({ ...BASE_CONFIG, fixturePath, proverDeps });
+    await agentFetch('https://fixture.example.com/wire');
+
+    expect(proverDeps.prove).not.toHaveBeenCalled(); // fixture hit — no live prove
+
+    const settleCall = mockFetch.mock.calls.find(
+      (args) => (args[0] as string).includes('/settle'),
+    );
+    expect(settleCall).toBeDefined();
+    const body = JSON.parse((settleCall![1] as RequestInit).body as string) as Record<string, unknown>;
+    const proof = (body['paymentPayload'] as Record<string, unknown>)['proof'] as Record<string, unknown>;
+
+    // All 8 previously-missing fields must flow from fixture.publicInputs through decomposition into the wire.
+    expect(proof['root']).toBe(EXPECTED_DECOMPOSED.root);
+    expect(proof['publicAmount']).toBe(EXPECTED_DECOMPOSED.publicAmount);
+    expect(proof['extDataHash']).toBe(EXPECTED_DECOMPOSED.extDataHash);
+    expect(proof['inputNullifiers']).toEqual(EXPECTED_DECOMPOSED.inputNullifiers);
+    expect(proof['outputCommitment0']).toBe(EXPECTED_DECOMPOSED.outputCommitment0);
+    expect(proof['outputCommitment1']).toBe(EXPECTED_DECOMPOSED.outputCommitment1);
+    expect(proof['aspMembershipRoot']).toBe(EXPECTED_DECOMPOSED.aspMembershipRoot);
+    expect(proof['aspNonMembershipRoot']).toBe(EXPECTED_DECOMPOSED.aspNonMembershipRoot);
 
     await rm(dir, { recursive: true });
   });
