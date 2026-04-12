@@ -9,12 +9,18 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "jest --no-coverage",
+    "test:watch": "jest --watch --no-coverage"
   },
   "dependencies": {
     "@enclave/core": "*"
   },
   "devDependencies": {
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.0.0",
+    "jest": "29.7.0",
+    "ts-jest": "^29.2.5"
   }
 }

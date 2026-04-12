@@ -68,6 +68,10 @@ wallets/
 deployments-local.json
 fixtures/*.secret.*
 
+# Agent bundles and notes (SDK-05 — never commit key material or UTXO data)
+*.enclave.json
+*-notes.json
+
 # Node workspaces (Phase 0 scaffold)
 node_modules/
 **/tsconfig.tsbuildinfo
