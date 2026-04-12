@@ -58,7 +58,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 - [x] **SDK-04**: The SDK has a Node-runnable proving path (either Node WASM or Playwright-driven Chromium fallback, as determined by SETUP-06)
 - [x] **SDK-05**: Agent private keys are read from environment variables or local files outside the repo; `.gitignore` blocks `*.key`, `.env`, `secrets/`, `wallets/`
 - [x] **SDK-06**: The SDK emits structured logs with automatic redaction of keys, nullifiers, and raw payloads; a redaction test confirms no secret survives through the log pipeline
-- [ ] **SDK-07**: The SDK constructs proofs using the **shared** `orgSpendingPubKey` as the input keypair for both real and null inputs (Model X). The agent never holds its own spending key — only an auth key for facilitator authentication. The blinding factor for ASP membership proofs is hardcoded to `0` per ORG-05.
+- [x] **SDK-07**: The SDK constructs proofs using the **shared** `orgSpendingPubKey` as the input keypair for both real and null inputs (Model X). The agent never holds its own spending key — only an auth key for facilitator authentication. The blinding factor for ASP membership proofs is hardcoded to `0` per ORG-05.
 
 ### Enclave Gate Middleware
 
@@ -188,7 +188,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | SDK-04 | Phase 3 | Complete |
 | SDK-05 | Phase 3 | Complete |
 | SDK-06 | Phase 3 | Complete |
-| SDK-07 | Phase 3 | Pending |
+| SDK-07 | Phase 3 | Complete |
 | GATE-01 | Phase 4 | Pending |
 | GATE-02 | Phase 4 | Pending |
 | GATE-03 | Phase 4 | Pending |
