@@ -1,7 +1,12 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
 import cors from "cors";
-import pinoHttp from "pino-http";
+// pino-http ESM/CJS interop: NodeNext module resolution resolves the CJS namespace.
+// At runtime, pinoHttp IS callable (it's the default export). Suppress TS2349 here.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import pinoHttpModule from "pino-http";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pinoHttp = (pinoHttpModule as any) as { (opts: object): express.RequestHandler };
 import type { FacilitatorState } from "./state.js";
 import { createVerifyRoute } from "./routes/verify.js";
 import { createSettleRoute } from "./routes/settle.js";

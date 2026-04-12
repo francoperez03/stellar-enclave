@@ -75,15 +75,14 @@ function parseRequest(body: unknown): ParsedVerifyRequest {
   }
   const proof = payload.proof as ShieldedProofWireFormat;
   const extData = payload.extData as ExtDataWireFormat;
-  if (!proof.extDataHash && !proof.ext_data_hash) {
-    throw new Error("proof must include extDataHash or ext_data_hash");
+  if (!proof.extDataHash) {
+    throw new Error("proof must include extDataHash");
   }
   return { proof, extData, requirements };
 }
 
 function getProofExtDataHash(proof: ShieldedProofWireFormat): string {
-  // Fixtures use camelCase extDataHash; wire protocol may use snake_case ext_data_hash
-  return (proof.extDataHash ?? (proof as unknown as Record<string, string>).ext_data_hash ?? "").toLowerCase();
+  return (proof.extDataHash ?? "").toLowerCase();
 }
 
 function invalid(reason: VerifyInvalidReason) {
@@ -118,7 +117,7 @@ export function createVerifyRoute(state: FacilitatorState): Router {
     }
 
     // 3. Early replay peek (non-authoritative)
-    const nullifiers: string[] = proof.inputNullifiers ?? (proof as unknown as { input_nullifiers?: string[] }).input_nullifiers ?? [];
+    const nullifiers: string[] = proof.inputNullifiers ?? [];
     for (const nullifier of nullifiers) {
       const peek = state.cache.peek(nullifier);
       if (peek?.state === "committed") {

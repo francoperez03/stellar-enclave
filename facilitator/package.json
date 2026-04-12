@@ -6,8 +6,12 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "enclave-facilitator": "dist/cli/bootstrap.js"
+  },
   "scripts": {
     "build": "tsup",
+    "bootstrap": "tsx src/cli/bootstrap.ts",
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --project unit --project integration",
