@@ -9,19 +9,21 @@ import {
 } from "../../src/mock/offChainVerify.js";
 
 const fixtureProof = {
+  a: "a".repeat(128),
+  b: "b".repeat(256),
+  c: "c".repeat(128),
   root: "a".repeat(64),
-  public_amount: "b".repeat(64),
-  ext_data_hash: "c".repeat(64),
+  publicAmount: "b".repeat(64),
+  extDataHash: "c".repeat(64),
   // Two nullifiers per the policy_tx_2_2 circuit (2 inputs).
-  input_nullifiers: [
+  inputNullifiers: [
     "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
     "cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe0",
   ],
-  output_commitment0: "1".repeat(64),
-  output_commitment1: "2".repeat(64),
-  asp_membership_root: "3".repeat(64),
-  asp_non_membership_root: "4".repeat(64),
-  // snarkjs proof fields (pi_a, pi_b, pi_c) would normally be here; unused in this test
+  outputCommitment0: "1".repeat(64),
+  outputCommitment1: "2".repeat(64),
+  aspMembershipRoot: "3".repeat(64),
+  aspNonMembershipRoot: "4".repeat(64),
 } as any;
 
 const fixtureExtData = {
@@ -60,7 +62,7 @@ describe("offChainVerify", () => {
     await expect(
       offChainVerify(
         { verifyProof, vKey: {} },
-        { proof: { ...fixtureProof, input_nullifiers: [] }, extData: fixtureExtData },
+        { proof: { ...fixtureProof, inputNullifiers: [] }, extData: fixtureExtData },
       ),
     ).rejects.toThrow(/input_nullifiers must contain at least one entry/);
   });
@@ -74,14 +76,14 @@ describe("offChainVerify", () => {
     const signals = verifyProof.mock.calls[0][1];
     expect(signals).toHaveLength(9);
     expect(signals[0]).toBe(fixtureProof.root);
-    expect(signals[3]).toBe(fixtureProof.input_nullifiers[0]);
+    expect(signals[3]).toBe(fixtureProof.inputNullifiers[0]);
   });
 
   it("mockTxHash prefix is always mock_ followed by first 16 hex chars of first nullifier", async () => {
     const verifyProof = vi.fn().mockResolvedValue(true);
     const proofWith0x = {
       ...fixtureProof,
-      input_nullifiers: ["0xaabbccdd11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344"],
+      inputNullifiers: ["0xaabbccdd11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344"],
     };
     const result = await offChainVerify(
       { verifyProof, vKey: {} },

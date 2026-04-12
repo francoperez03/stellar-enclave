@@ -30,19 +30,19 @@ export async function offChainVerify(
   deps: OffChainVerifyDeps,
   input: OffChainVerifyInput,
 ): Promise<MockVerifyResult> {
-  if (!input.proof.input_nullifiers?.length) {
+  if (!input.proof.inputNullifiers?.length) {
     throw new Error("proof.input_nullifiers must contain at least one entry");
   }
 
   const publicSignals = [
     input.proof.root,
-    input.proof.public_amount,
-    input.proof.ext_data_hash,
-    ...input.proof.input_nullifiers,
-    input.proof.output_commitment0,
-    input.proof.output_commitment1,
-    input.proof.asp_membership_root,
-    input.proof.asp_non_membership_root,
+    input.proof.publicAmount,
+    input.proof.extDataHash,
+    ...input.proof.inputNullifiers,
+    input.proof.outputCommitment0,
+    input.proof.outputCommitment1,
+    input.proof.aspMembershipRoot,
+    input.proof.aspNonMembershipRoot,
   ];
 
   // The snarkjs proof wire format is consumed directly — our ShieldedProofWireFormat
@@ -57,7 +57,7 @@ export async function offChainVerify(
     return { ok: false, reason: "proof_verification_failed" };
   }
 
-  const firstNullifier = input.proof.input_nullifiers[0].replace(/^0x/, "").toLowerCase();
+  const firstNullifier = input.proof.inputNullifiers[0].replace(/^0x/, "").toLowerCase();
   return { ok: true, mockTxHash: `mock_${firstNullifier.slice(0, 16)}` };
 }
 

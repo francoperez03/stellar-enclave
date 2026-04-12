@@ -50,11 +50,11 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
   do {
     let page;
     try {
-      page = await deps.rpc.getEvents({
-        startLedger,
-        filters: [filter],
-        pagination: cursor ? { cursor, limit: 200 } : { limit: 200 },
-      });
+      if (cursor) {
+        page = await deps.rpc.getEvents({ cursor, filters: [filter], limit: 200 });
+      } else {
+        page = await deps.rpc.getEvents({ startLedger, filters: [filter], limit: 200 });
+      }
     } catch (err) {
       throw new Error(
         `event scan failed at cursor=${cursor ?? "initial"}: ${(err as Error).message}`,
@@ -65,7 +65,7 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
     for (const event of page.events ?? []) {
       try {
         const nullifiers = extractFn(event.value);
-        const txHash = event.transactionHash ?? "unknown";
+        const txHash = event.txHash ?? "unknown";
         const seenAt = Date.now(); // Approximate — we don't have ledger close time in events.
         for (const nullifierHex of nullifiers) {
           pendingEntries.push({ nullifierHex, txHash, seenAt });
@@ -73,7 +73,7 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
         }
       } catch (err) {
         deps.logger?.warn(
-          { txHash: event.transactionHash, err: (err as Error).message },
+          { txHash: event.txHash, err: (err as Error).message },
           "skipping malformed pool.transact event",
         );
       }
