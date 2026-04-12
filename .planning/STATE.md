@@ -35,7 +35,7 @@ Phase 01-pool-integration-multi-org-namespace: [██████████] 
 Phase 02-facilitator-bridge: [██████████] 100% (8/8 plans) ✓
 Phase 03-agent-sdk-enclave-agent: [████░░░░░░] 40% (2/5 plans)
 
-Overall milestone: 3/7 phases complete, 18/24 plans complete.
+Overall milestone: 3/7 phases complete, 20/24 plans complete.
 
 ## Performance Metrics
 
@@ -144,10 +144,11 @@ None.
 - 2026-04-11: Completed 00-05-PLAN.md (prover benchmark + POOL-08 resolution) — 3 tasks, 3 commits (`60be4f0`, `b82b20c`, `fad5279`). SETUP-06 + POOL-08 GREEN. Node WASM prover 2753 ms < 3000 ms budget. POOL-08 H4 confirmed empirically. Day-1 Kill Switch (b) defused. **Phase 0 COMPLETE** — both kill switches (a) and (b) DEFUSED, all 10 Phase-0 requirements GREEN. Ready for Phase 1.
 - 2026-04-11: Completed 01-01-PLAN.md (deploy-admin-gate: Branch B fresh redeploy + POOL-06/07 wiring + preflight + seeder) — ~50 min, 3 tasks, 3 commits (`ce7154d`, `05c5ac2`, `5744342`). POOL-01 + POOL-05 + POOL-06 + POOL-07 GREEN. Fresh deploy under mikey (pool=`CBTP7PJJ...`, asp-m=`CCH2FMMQ...`, asp-nm=`CCUT3PSE...`, verifier=`CBV7OHVP...`). AdminInsertOnly=false verified by invoke exit code. Empty SMT root captured = `"0"`. `scripts/preflight.sh pool-ttl-bump` wraps extend for all 4 contracts (default 535680 ledgers / ~30d). `scripts/seed-demo-accounts.sh` generated fresh `user` identity (`GAJXKNJC...`), friendbot-funded, USDC classic trustlines ensured on both mikey + user. mikey has 0 USDC (Circle web-faucet drip pending before recording day). Ready for 01-02.
 - 2026-04-12: Completed 03-02-PLAN.md (config loader + pino logger — SDK-05 + SDK-06) — ~2 min, 2 tasks, 3 commits (`593ecfb` Task 1 inherited from prior session, `8fc22c9` Task 2 RED failing tests, `79d5e43` Task 2 GREEN pino impl). 7/7 logger redaction assertions pass GREEN covering orgSpendingPrivKey/agentAuthKey/proof.a-c/inputNullifiers/extData. Locked redact paths array (11 entries) with wildcard + nested variants. Next: 03-03 (WASM prover wrapper — RED already committed in `320b3f7`).
+- 2026-04-12: Completed 03-03-PLAN.md (WASM prover wrapper — SDK-02/03/04) — 4 min, 1 task, 1 housekeeping commit (`d1da192` remove orphan vitest.config.ts). GREEN-first TDD: prover.ts implementation was pre-committed in `29a94e0` (labeled "Plan 03-01 stubs" but contained full impl); RED tests in `320b3f7` pre-satisfied; test infra realigned in `4f1eb40` (NODE_OPTIONS=--experimental-vm-modules + @jest/globals). 6/6 prover tests pass (5 mock unit + 1 env-gated live smoke). Ready for 03-04 (witness inputs / Model X shared key) and 03-05 (createAgent + fetch interceptor + note selector wiring).
 
 ## Session
 
 **Last session:** 2026-04-12T21:12:32.167Z
 **Stopped at:** Completed 03-agent-sdk-enclave-agent/03-03-PLAN.md (WASM prover wrapper — SDK-02/03/04 green, 6/6 tests passing)
 **Resume file:** None
-**Next action:** Execute 03-03-PLAN.md (Wave 1 — WASM prover wrapper via createRequire, prove() returning 128-byte proof, derivePublicKey — SDK-02, SDK-03, SDK-04). RED tests already committed in `320b3f7`. Downstream: 03-04 (witness inputs / Model X), 03-05 (fetch interceptor + note selector + createAgent wiring).
+**Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).

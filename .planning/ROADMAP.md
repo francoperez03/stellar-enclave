@@ -37,8 +37,8 @@ These are the five pitfalls from `research/PITFALLS.md` that can kill the submis
 
 | # | Pitfall | Lethality | Defused in | How it dies |
 |---|---------|-----------|------------|-------------|
-| 1 | 4/4 | Complete    | 2026-04-12 | Narrative locked in writing across PROJECT.md, REQUIREMENTS.md, README, pitch script on day 1. SETUP-07. |
-| 2 | 8/8 | Complete   | 2026-04-12 | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
+| 1 | **Per-org on-chain ASPs are impossible** — pool contract hard-codes one ASP root; three deployed ASPs can't route (Pitfall 1) | Extinction event (the entire plan falls apart at deploy time) | **Phase 0** | Narrative locked in writing across PROJECT.md, REQUIREMENTS.md, README, pitch script on day 1. SETUP-07. |
+| 2 | **Prover is browser-WASM-only** — Node-native path may not exist; SDK can't generate proofs without either napi-rs bindings or a Playwright fallback (Pitfall 6) | Blocks SDK + agent demo entirely | **Phase 0 (benchmark)** → Phase 3 (integration) | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
 | 3 | **TTL expiry + RPC 7-day retention** — pool storage TTL expires mid-demo; events outside 7-day window break indexer (Pitfalls 10, 11) | Testnet deploy dies silently during recording | **Phase 0 (smoke test)** + Phase 5 (preflight) | Day-1 `stellar contract invoke -- get_root` against deployed pool; daily `contract extend` routine; `scripts/preflight.sh` blocks recording if TTL <48h or oldest event >6 days. SETUP-05, OPS-01, OPS-02. |
 | 4 | **Soroban CPU budget can't fit Groth16 verification** — verifier may OOG on the deployed circuit (Pitfall 14) | The entire shielded-pool story is unverifiable; demo is fake | **Phase 0 (smoke test)** | Day-1 end-to-end `transact` against the deployed testnet pool. If it reverts with OOG, scope pivots immediately to mock facilitator + cached proofs; narrative becomes "proof-of-concept pending mainnet budget tuning". SETUP-05. |
 | 5 | **Testnet flakiness during live recording** — RPC, Horizon, faucet, deployed contracts can all go down during recording (Pitfall 17) | Submission goes out with broken video or no video | **Phase 6 (rehearsal + buffer)** | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
@@ -314,7 +314,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 0. Setup & Day-1 De-risking | 5/5 | Complete | 2026-04-11 |
 | 1. Pool Integration & Multi-Org Namespace | 1/4 | In Progress | - |
 | 2. Facilitator Bridge | 8/8 | Complete | 2026-04-12 |
-| 3. Agent SDK (`@enclave/agent`) | 2/5 | In Progress | - |
+| 3. Agent SDK (`@enclave/agent`) | 3/5 | In Progress | - |
 | 4. Enclave Gate Middleware + Gated Endpoint | 0/2 | Planned | - |
 | 5. Dashboard + Ops Hardening | 0/TBD | Not started | - |
 | 6. Demo Recording + Submission | 0/TBD | Not started | - |
