@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enclave · Org Admin</title>
+  <meta name="description" content="Local browser admin for Enclave shielded organizations on Stellar." />
+
+  <link rel="stylesheet" href="css/app.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="bg-dark-950 text-dark-50 font-sans min-h-screen antialiased">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 min-h-screen">
+
+  <!-- Region 1: Header (always visible) -->
+  <header class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl overflow-visible relative z-50" role="banner">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg shadow-lg shadow-brand-500/25" aria-hidden="true">
+        <svg class="w-6 h-6 text-dark-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-semibold">
+          Enclave <span class="text-dark-400 font-normal">· Org Admin</span>
+        </h1>
+        <p class="text-xs text-dark-500">Org admin console</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 overflow-visible">
+      <div class="flex items-center gap-2 px-3 py-2 bg-dark-800 border border-dark-700 rounded-full text-sm text-dark-300">
+        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse-dot shadow-sm shadow-emerald-500" aria-hidden="true"></span>
+        <span id="network-chip">No network</span>
+      </div>
+      <div class="relative overflow-visible">
+        <button
+          type="button"
+          id="connect-freighter-btn"
+          class="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-brand-500 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+          aria-label="Connect Freighter wallet"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="2" y="6" width="20" height="14" rx="2"/>
+            <path d="M22 10h-4a2 2 0 0 0 0 4h4"/>
+            <circle cx="18" cy="12" r="1" fill="currentColor"/>
+            <path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <span>Connect Freighter</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Region 2: Deployments banner (hidden unless deployments.json missing or initialized !== true) -->
+  <section id="deployments-banner" hidden class="bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl p-4 sm:p-6 flex items-start justify-between gap-4" aria-labelledby="deployments-banner-heading">
+    <div>
+      <h2 id="deployments-banner-heading" class="text-sm uppercase tracking-[0.25em] text-rose-400 font-semibold">Contracts not deployed yet</h2>
+      <p class="text-sm text-rose-200 mt-2">Run <code class="font-mono">scripts/deploy.sh</code>, then reload this page.</p>
+    </div>
+    <button id="reload-page-btn" type="button" class="flex-shrink-0 bg-dark-800 border border-dark-700 rounded-lg text-sm font-semibold text-dark-50 px-4 py-2 hover:border-brand-500 hover:text-brand-400 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950">Reload Page</button>
+  </section>
+
+  <main id="main-content" class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+
+    <!-- Region 3: Org Bootstrap card (hidden unless wallet connected + no org row) -->
+    <section id="org-bootstrap-card" hidden class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="org-bootstrap-heading">
+      <h2 id="org-bootstrap-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Org bootstrap</h2>
+      <div class="mt-4 flex flex-col gap-4">
+        <p class="text-sm text-dark-300">No org yet for this account. Create an org to derive your spending key, register your ASP entry, and start depositing. One Freighter account holds exactly one org.</p>
+        <!-- Permissionless-ASP warning banner -->
+        <div class="bg-amber-950/40 border border-amber-700/50 px-3 py-2 rounded-lg text-xs text-amber-300">
+          <strong>Notice:</strong> This Enclave pool uses a permissionless ASP. Anyone with a Stellar account on testnet can insert themselves into the membership tree. This is intentional for the hackathon — in production, access would be gated by the facilitator.
+        </div>
+        <div id="org-bootstrap-error" hidden class="bg-rose-500/10 border border-rose-500/40 px-3 py-2 rounded-lg text-xs text-rose-300"></div>
+        <div class="flex justify-end">
+          <button
+            id="create-org-btn"
+            type="button"
+            class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span id="create-org-btn-text">Create Org</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Region 4+5: Active Org card + Agents list (hidden unless org exists) -->
+    <section id="org-card" hidden class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="org-card-heading">
+      <h2 id="org-card-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Active org</h2>
+
+      <!-- Org identity tiles -->
+      <div class="mt-4 grid grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
+          <div class="text-[10px] uppercase tracking-wide text-dark-400 mb-1">Org ID</div>
+          <div class="font-mono text-xs text-dark-200 break-all" id="org-id-readout">--</div>
+        </div>
+        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] uppercase tracking-wide text-dark-400">Spending Pubkey</span>
+            <button type="button" class="copy-tile-btn p-1 text-dark-500 hover:text-brand-500 transition-colors" data-target="org-pubkey-readout" aria-label="Copy spending pubkey" title="Copy">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+            </button>
+          </div>
+          <div class="font-mono text-xs text-dark-200 break-all" id="org-pubkey-readout">--</div>
+        </div>
+        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] uppercase tracking-wide text-dark-400">ASP Leaf</span>
+            <button type="button" class="copy-tile-btn p-1 text-dark-500 hover:text-brand-500 transition-colors" data-target="asp-leaf-readout" aria-label="Copy ASP leaf" title="Copy">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+            </button>
+          </div>
+          <div class="font-mono text-xs text-dark-200 break-all" id="asp-leaf-readout">--</div>
+        </div>
+        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
+          <div class="text-[10px] uppercase tracking-wide text-dark-400 mb-1">ASP Leaf Index</div>
+          <div class="font-mono text-xs text-dark-200" id="asp-leaf-index-readout">--</div>
+        </div>
+        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
+          <div class="text-[10px] uppercase tracking-wide text-dark-400 mb-1">Created</div>
+          <div class="font-mono text-xs text-dark-200" id="org-created-at-readout">--</div>
+        </div>
+        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] uppercase tracking-wide text-dark-400">Deploy Tx</span>
+          </div>
+          <div class="font-mono text-xs text-brand-400" id="org-tx-hash-readout">--</div>
+        </div>
+      </div>
+
+      <!-- Deposit + Enroll actions -->
+      <div class="mt-6 flex flex-wrap gap-3 items-end">
+        <div class="flex flex-col gap-2 flex-1 min-w-[180px]">
+          <label for="deposit-amount-input" class="text-[10px] uppercase tracking-wide text-dark-400">Deposit amount (USDC)</label>
+          <input
+            id="deposit-amount-input"
+            type="number"
+            min="0"
+            step="0.0000001"
+            inputmode="decimal"
+            placeholder="10"
+            class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm font-mono text-dark-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+          />
+        </div>
+        <button
+          id="deposit-btn"
+          type="button"
+          class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span id="deposit-btn-text">Deposit USDC</span>
+        </button>
+        <button
+          id="enroll-agent-btn"
+          type="button"
+          class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Enroll Agent</span>
+        </button>
+      </div>
+
+      <!-- Region 5: Agents list -->
+      <div class="mt-6 flex flex-col gap-2">
+        <h3 class="text-[10px] uppercase tracking-wide text-dark-400">Agents</h3>
+        <div id="agents-list" class="flex flex-col gap-2">
+          <!-- populated by index.js from tpl-agent-row, or empty state -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Region 6: Activity Log (always visible, wallet-independent) -->
+    <section class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="activity-heading">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <h2 id="activity-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Activity</h2>
+      </div>
+      <pre id="activity-log" class="font-mono text-xs text-dark-400 whitespace-pre-wrap"></pre>
+    </section>
+
+  </main>
+</div>
+
+<!-- Region 7: Enroll Agent modal (hidden by default) -->
+<div
+  id="enroll-modal"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="enroll-modal-heading"
+  class="fixed inset-0 z-50 bg-dark-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+>
+  <div class="bg-dark-900/95 border border-dark-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4">
+    <h2 id="enroll-modal-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Enroll agent</h2>
+    <div class="flex flex-col gap-2">
+      <label for="enroll-agent-name-input" class="text-xs text-dark-300">Agent name</label>
+      <input
+        id="enroll-agent-name-input"
+        type="text"
+        autocomplete="off"
+        placeholder="e.g. trader-bot-1"
+        class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm font-mono text-dark-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+      />
+      <div id="enroll-name-error" hidden class="text-xs text-rose-300"></div>
+    </div>
+    <div class="flex gap-3 justify-end">
+      <button
+        id="enroll-close-btn"
+        type="button"
+        class="bg-dark-800 border border-dark-700 rounded-lg text-sm font-semibold text-dark-50 px-4 py-2 hover:border-brand-500 hover:text-brand-400 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+      >Close</button>
+      <button
+        id="enroll-submit-btn"
+        type="button"
+        class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="enroll-submit-btn-text">Enroll &amp; Download Bundle</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-2 z-40" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+<!-- Toast Template -->
+<template id="tpl-toast">
+  <div class="toast flex items-center gap-3 px-4 py-3 bg-dark-800 border rounded-lg shadow-xl max-w-sm animate-slide-in" role="alert">
+    <svg class="toast-icon w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
+    <p class="toast-message flex-1 text-sm"></p>
+    <button type="button" class="toast-close p-1 text-dark-400 hover:text-dark-200 transition-colors" aria-label="Dismiss">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</template>
+
+<!-- Agent Row Template -->
+<template id="tpl-agent-row">
+  <div class="flex items-center justify-between gap-3 p-3 bg-dark-800 border border-dark-700 rounded-lg">
+    <div class="flex flex-col gap-1 min-w-0">
+      <span class="font-mono text-xs text-dark-200 font-semibold truncate" data-agent-name></span>
+      <span class="text-[10px] text-dark-400" data-agent-when></span>
+    </div>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span class="font-mono text-[10px] text-dark-400" data-agent-pubkey></span>
+      <button type="button" class="copy-agent-key-btn p-1 text-dark-500 hover:text-brand-500 transition-colors" aria-label="Copy auth pubkey" title="Copy auth pubkey">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      </button>
+    </div>
+  </div>
+</template>
+
+<script type="module" src="/js/enclave/index.js"></script>
+</body>
+</html>
