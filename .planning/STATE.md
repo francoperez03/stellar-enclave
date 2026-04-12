@@ -1,0 +1,118 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+current_phase: 01-pool-integration-multi-org-namespace
+current_plan: 4
+status: verifying
+stopped_at: Completed 02-02 (Phase 2 types + hashExtData port + bindingCheck)
+last_updated: "2026-04-12T13:31:35.320Z"
+progress:
+  total_phases: 7
+  completed_phases: 2
+  total_plans: 22
+  completed_plans: 13
+---
+
+# Session State
+
+## Project Reference
+
+See: .planning/PROJECT.md
+
+## Position
+
+**Milestone:** v1.0 milestone
+**Current phase:** 01-pool-integration-multi-org-namespace
+**Current Plan:** 4
+**Total Plans in Phase:** 4
+**Status:** Phase complete — ready for verification
+
+## Progress
+
+Phase 00-setup-day-1-de-risking: [██████████] 100% (5/5 plans) ✓
+Phase 01-pool-integration-multi-org-namespace: [██░░░░░░░░] 25% (1/4 plans)
+
+Overall milestone: 1/7 phases complete.
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Tasks | Files | Completed |
+|-------|------|----------|-------|-------|-----------|
+| 00-setup-day-1-de-risking | 01 | 3 min | 3 | 3 | 2026-04-11 |
+| 00-setup-day-1-de-risking | 02 | 4 min | 3 | 23 | 2026-04-11 |
+| 00-setup-day-1-de-risking | 03 | 5 min | 3 | 4 | 2026-04-11 |
+| 00-setup-day-1-de-risking | 04 | ~2 h | 3 | 5 | 2026-04-11 |
+| 00-setup-day-1-de-risking | 05 | ~3 h | 3 | 6 | 2026-04-11 |
+| 01-pool-integration-multi-org-namespace | 01 | ~50 min | 3 | 6 | 2026-04-11 |
+| Phase 01-pool-integration-multi-org-namespace P02 | ~60min | 2 tasks | 13 files |
+| Phase 01-pool-integration-multi-org-namespace P04 | ~4 min | 2 tasks | 4 files |
+| Phase 02-facilitator-bridge P03 | 3 min | 2 tasks | 3 files |
+| Phase 02-facilitator-bridge P04 | 4 min | 2 tasks | 5 files |
+| Phase 02-facilitator-bridge P01 | 6 | 3 tasks | 13 files |
+| Phase 02-facilitator-bridge P02 | 9 min | 3 tasks | 7 files |
+
+## Decisions
+
+- **00-01** — Per-phase feature-branch convention locked: `feat/phase-N` branched off `develop`. Rationale: matches Franco's standard feature-branch workflow; avoids umbrella hackathon branch.
+- **00-01** — License drift guard pattern: `scripts/check-upstream.sh` wraps `git diff upstream/main -- LICENSE NOTICE circuits/LICENSE` with `set -euo pipefail` and auto-fetches `upstream/main` if missing. Reusable by Phase 5 preflight.
+- **00-01** — Day-1 `.gitignore` hardening applied before any code scaffolding. 10 new patterns (`*.key`, `*.pem`, `.env`, `.env.local`, `.env.*.local`, `secrets/`, `wallets/`, `deployments-local.json`, `fixtures/*.secret.*`, `node_modules/`) plus preserved upstream protections.
+- **00-01** — Secrets scan performed via 5 ripgrep patterns + 5 filename globs; all hex-64 matches trace to upstream crypto constants (poseidon2/, BN256, Cargo.lock). Zero Stellar S-keys, zero env assignments, zero secret files on disk. SETUP-01/OPS-04/OPS-05 GREEN.
+- **00-01** — Day-1 secrets scan report (`00-01-SECRETS-SCAN.md`) lives under gitignored `.planning/`; Task 3 recorded as an empty git commit (`--allow-empty`) to preserve the atomic-per-task audit trail.
+- [Phase 00-02]: Root build script uses explicit topological order (core -> agent -> facilitator -> treasury -> gate -> demo) instead of npm run -ws, because -ws walks workspaces alphabetically and @enclave/agent's tsc fails before @enclave/core has a dist/. No new tooling added.
+- [Phase 00-02]: Ignore **/tsconfig.tsbuildinfo: TypeScript incremental build cache per package; added to .gitignore under Node workspaces section.
+- [Phase 00-02]: Phase-0 stub marker pattern: every scaffolded package exports PHASE_0_STUB = true so downstream phases can grep to find stubs pending replacement. Primary functions throw 'Phase N target, not yet implemented' with explicit phase attribution.
+- [Phase 00-02]: @enclave/core constants: BN256_MOD canonical BN254 scalar prime (final); TREE_DEPTH=10 / SMT_DEPTH=32 carry TODO-phase-1 comments for Phase 1 to replace with upstream-confirmed values.
+- [Phase 00-03]: Scrubbed PROJECT.md with three surgical edits (lines 59, 80, 93) instead of a full rewrite — preserves the canonical narrative-lock row on line 95 and minimizes diff risk. Forbidden-phrase grep on PROJECT.md now returns zero hits.
+- [Phase 00-03]: README rewritten in place to Enclave identity (Enclave — Shielded Organizations for Agentic Commerce); upstream credit moved to a Credits section with explicit 'Nethermind not used as a trademark' disclaimer. LGPLv3 citation scoped specifically to the poseidon2/ crate fork alongside the primary Apache 2.0 notice.
+- [Phase 00-03]: PITCH.md draft originally used Company1/Company2/Company3 as demo org names (per MEMORY.md feedback — avoid Acme/Globex/Initech). **Renamed 2026-04-11 to rival-quant-fund framing:** Northfield Capital / Ashford Partners / Bayridge Capital. Rationale: three direct competitors in the same industry make the privacy threat visceral (API-spend leakage = strategy copy). See DEMO-SCRIPT.md v4 changelog for full rationale. Canonical opening line 'shared on-chain ASP, per-org policy off-chain' is verbatim; trailing DEMO-06 claim-hygiene checklist and inline SETUP-07 self-check keep the rule visible at Phase 6 rehearsal time.
+- [Phase 00-03]: Day-1 Kill Switch (c) defused: SETUP-07 narrative lock is GREEN across all four authoritative files (PROJECT.md, REQUIREMENTS.md, README.md, PITCH.md). All residual forbidden-phrase hits are scoped OK-scoped-NOT-doing or OK-scoped-v2; zero FAIL-live-claim hits. SETUP-04 also GREEN.
+- **00-04 task1 approach** — Option A: reuse existing testnet deploy. Rationale: the plan's "deployer is not ours" premise is wrong — `stellar keys address mikey = GBWJZZ3X...`, which IS the current identity. Plan's `.admin != GBWJZZ3X...` criterion is impossible without burning new faucet XLM; revised to `.admin == mikey address`. TTLs extended 30d on all 4 contracts. Zero redeploy fees.
+- [Phase 00-04]: Standalone Rust crate for smoke-fixture-cli (empty `[workspace]` table + `[patch.crates-io]` mirror) preserves SETUP-02 (zero edits to root `Cargo.toml` / `Cargo.lock`). Same pattern is reusable by any future drop-in tooling that needs arkworks+groth16 without touching the root workspace.
+- [Phase 00-04]: Upstream `e2e_tests::tests::utils::*` helpers inlined verbatim into `tools/smoke-fixture-cli/src/main.rs` — `e2e-tests/src/lib.rs` only exposes `mod tests` under `#[cfg(test)]`, so they are not reachable as a path-dep (Rule 3 blocker).
+- [Phase 00-04]: Fixture JSON shape uses nested objects with decimal-string u256 values to match the stellar CLI's implicit-CLI for `pool::transact`; plan's assumption of `--proof-xdr <base64>` flags was wrong (Rule 3 blocker).
+- [Phase 00-04]: Kill-Switch Decision — **GREEN**. `verifier.verify` returned `Error(Contract, #1) = MalformedPublicInputs`, which proves the simulation reached the contract body without Soroban budget exhaustion. Pitfall 14 is defused by empirical observation. Day-1 Kill Switch (a) deactivated; Phase 1 proceeds unchanged.
+- **00-05 runtime choice** — Node WASM prover path wins (wall-clock 2753 ms < 3000 ms budget, 247 ms headroom, peak RSS 150 MB, 128-byte Groth16 proof). Phase 3 `@enclave/agent` SDK ships with `wasm-pack --target nodejs` build of `app/crates/prover` + `app/crates/witness`. Playwright-Chromium fallback script committed as regression insurance but NOT executed.
+- [Phase 00-05]: wasmer-in-Node bootstrap pre-plan risk did NOT materialize — `wasmer::{Module, Store}` loaded cleanly under Node 23.6.1; getrandom polyfill works out of the box. No code changes required.
+- [Phase 00-05]: wasm-opt --no-opt workaround for prover crate's bulk-memory usage. Does not affect runtime performance (unoptimized wasm still runs in 2630 ms prove-time).
+- **00-05 POOL-08 answer** — **H4 confirmed empirically** via witness fixture inspection. `input[0].publicKey = derive_public_key(101)`, `input[1].publicKey = derive_public_key(102)` — distinct and non-zero → caller-managed per-slot keys, both inserted into asp-membership. Phase 1 Treasury action items: **POOL-08-A** per-slot `--null-spending-key` arg at the treasury CLI; **POOL-08-B** dual-pubkey insertion at org bootstrap.
+- [Phase 00-05]: Kill-Switch Decision — **GREEN**. Day-1 Kill Switch (b) DEFUSED. Both Phase-0 kill switches (a) and (b) are now DEFUSED; Phase 0 closes with zero pending risks.
+- **01-01 Task 0 decision** — **Branch B (fresh full redeploy)** selected over Branch A (patch-in-place). Rationale: Branch A would still require verifier redeploy anyway (vk mismatch between Phase-0 deploy and `policy_tx_2_2_vk.json`), so "reuse" saves zero fees while doubling complexity. Branch B = single clean invocation of `deploy.sh testnet --deployer mikey --admin mikey --vk-file scripts/testdata/policy_tx_2_2_vk.json`. New contract IDs: pool=`CBTP7PJJ...`, asp-m=`CCH2FMMQ...`, asp-nm=`CCUT3PSE...`, verifier=`CBV7OHVP...`.
+- **01-01 POOL-06 verification strategy** — **Trust the invoke exit code**. `asp-membership` has no public `get_admin_insert_only` getter (plan assumption wrong). `stellar contract read --key AdminInsertOnly --durability persistent` also fails: `DataKey` is a `#[contracttype] enum` whose variant storage key serializes as `Vec<Val>` (ScVec), NOT a symbol — CLI's symbol-only `--key` flag cannot match it. Replaced read-back verification with invoke exit-code proof: `set_admin_insert_only` has only two branches (admin.require_auth() fails → non-zero exit, OR store.set runs), so clean invoke = post-condition proven. Empirical permissionless-insert verification deferred to Plan 01-03.
+- **01-01 demo-accounts.json schema** — `{mikey, user}` with public keys only (per user directive, overriding plan's `{company1, company2, company3}` shape). Secret key for `user` stays inside `stellar keys` config; never committed. Rationale: Phase 1 needs exactly two signers (admin + end-user), multi-org namespacing arrives in Plan 01-02 via `ORG_ID` scoping — not via separate demo accounts.
+- **01-01 Circle testnet USDC faucet gate** — `https://faucet.circle.com/` is web-UI only; cannot be automated from bash. Seeder WARNs loudly with the faucet URL and continues cleanly (trustlines + demo-accounts.json still written), so a re-run after manual faucet drip completes the transfer idempotently. Documented as pre-recording-day manual step in SUMMARY "User Setup Required".
+- [Phase 01-pool-integration-multi-org-namespace]: Test directory is app/js/__tests__/enclave/ not app/tests/enclave/ (upstream convention, zero config change)
+- [Phase 01-pool-integration-multi-org-namespace]: Extended app/js/__mocks__/prover.js from 67-line stub to 274-line deterministic mock (bridge.js exercises crypto shapes at import time)
+- [Phase 01-pool-integration-multi-org-namespace]: GREEN-first TDD for Plan 01-02 Task 1 (implementations pre-existed from prior session; tdd.md RED-phase fallback 'Feature may already exist - investigate')
+- [Phase 01-pool-integration-multi-org-namespace]: POOL-04 real-crypto invariance deferred to Plan 01-04 Playwright e2e; unit POOL-04 test guards 112-byte contract at mock boundary across 20 random inputs
+- [Phase 01-04]: index.js duplicates logActivity/showToast from admin.js verbatim to avoid editing upstream; signWalletAuthEntry imported from upstream wallet.js
+- [Phase 01-04]: Trunk.toml: mkdir -p placed in pre_build so esbuild has target dir during build hook; 3 additive lines total, zero deletions
+- [Phase 02-03]: TOCTOU atomicity via synchronous Map.has() + Map.set() — no awaits between read and write; Node.js single-threaded JS guarantees safety without locks
+- [Phase 02-04]: XLM check runs before USDC check in checkSolvency() for stable debugging reason priority when both invariants fail simultaneously
+- [Phase 02-04]: balanceReader.ts has zero @stellar/stellar-sdk imports — real Horizon/RPC call construction deferred to Plan 05 via BalanceReaderDeps injection, keeping reader purely unit-testable
+- [Phase 02-04]: decimalToBaseUnits() uses string math (no Number()) for XLM stroops conversion to avoid silent precision loss at large XLM/USDC amounts
+- [Phase 02-01]: tsconfig rootDir removed to fix TS6059 — @enclave/core path alias resolves outside facilitator dir; removing rootDir lets TypeScript infer the common root
+- [Phase 02-01]: Golden hash vectors computed offline via one-time Node script replicating hashExtData (sorted XDR ScMap -> keccak256 % BN256_MOD); no cargo test execution required for fixture generation
+- [Phase 02-01]: Fixture encrypted outputs corrected to 112-byte (224-hex-char) matching pool.rs ExtData struct; pre-existing stubs had 142-byte buffers
+- [Phase 02-02]: XDR ScMap entry order for hashExtData: alphabetical sort (encrypted_output0, encrypted_output1, ext_amount, recipient) matching Soroban serialization; Buffer.from() wrap required for scvBytes() TypeScript compatibility
+- [Phase 02-02]: Golden ext_data_hash vectors synthesized via Node hashExtData port (not cargo e2e) against 112-byte all-zero encrypted outputs; algorithm cross-verified with app/js/transaction-builder.js
+
+## Blockers
+
+None.
+
+## Session Log
+
+- 2026-04-11: STATE.md regenerated by /gsd:health --repair
+- 2026-04-11: Completed 00-01-PLAN.md (day-1 branch/license/secrets hygiene) — 3 min, 3 tasks, 3 commits (`317b7f5`, `61e6655`, `b746abc`). SETUP-01 + SETUP-03 + OPS-04 + OPS-05 all GREEN. Ready for 00-02.
+- 2026-04-11: Completed 00-03-PLAN.md (narrative lock & README rewrite) — ~5 min, 3 tasks, 3 commits (`69556e1`, `4f2170a`, `a434566`). SETUP-04 + SETUP-07 GREEN. Day-1 Kill Switch (c) defused. Ready for 00-04.
+- 2026-04-11: Completed 00-04-PLAN.md (testnet smoke test + Pitfall-14 gate, Option A deploy reuse) — 3 tasks, 3 commits (`a31bb18`, `7005763`, `a9a2df6`). SETUP-05 GREEN. `smoke-test.sh` gate=GREEN against live deploy. Day-1 Kill Switch (a) defused by empirical observation. Ready for 00-05.
+- 2026-04-11: Completed 00-05-PLAN.md (prover benchmark + POOL-08 resolution) — 3 tasks, 3 commits (`60be4f0`, `b82b20c`, `fad5279`). SETUP-06 + POOL-08 GREEN. Node WASM prover 2753 ms < 3000 ms budget. POOL-08 H4 confirmed empirically. Day-1 Kill Switch (b) defused. **Phase 0 COMPLETE** — both kill switches (a) and (b) DEFUSED, all 10 Phase-0 requirements GREEN. Ready for Phase 1.
+- 2026-04-11: Completed 01-01-PLAN.md (deploy-admin-gate: Branch B fresh redeploy + POOL-06/07 wiring + preflight + seeder) — ~50 min, 3 tasks, 3 commits (`ce7154d`, `05c5ac2`, `5744342`). POOL-01 + POOL-05 + POOL-06 + POOL-07 GREEN. Fresh deploy under mikey (pool=`CBTP7PJJ...`, asp-m=`CCH2FMMQ...`, asp-nm=`CCUT3PSE...`, verifier=`CBV7OHVP...`). AdminInsertOnly=false verified by invoke exit code. Empty SMT root captured = `"0"`. `scripts/preflight.sh pool-ttl-bump` wraps extend for all 4 contracts (default 535680 ledgers / ~30d). `scripts/seed-demo-accounts.sh` generated fresh `user` identity (`GAJXKNJC...`), friendbot-funded, USDC classic trustlines ensured on both mikey + user. mikey has 0 USDC (Circle web-faucet drip pending before recording day). Ready for 01-02.
+
+## Session
+
+**Last session:** 2026-04-12T13:31:35.318Z
+**Stopped at:** Completed 02-02 (Phase 2 types + hashExtData port + bindingCheck)
+**Resume file:** None
+**Next action:** Begin 01-02 (`/gsd:execute-phase 1`) — next plan is multi-org namespacing (ORG_ID scoping on asp-membership + pool). Manual step before recording day: mikey USDC faucet drip at `https://faucet.circle.com/`, then re-run `scripts/seed-demo-accounts.sh` to complete the 1000 USDC transfer to user.
