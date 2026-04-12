@@ -61,6 +61,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 - [x] **Phase 1: Pool Integration & Multi-Org Namespace** — Wire existing pool, model orgs as off-chain namespaces, implement org bootstrap + enrollment + pre-funding. (completed 2026-04-12)
 - [x] **Phase 2: Facilitator Bridge** — Build the shielded-proof → USDC x402 settlement service with replay protection, policy enforcement, and `/health`. (completed 2026-04-12)
 - [x] **Phase 3: Agent SDK (`@enclave/agent`)** — Ship the Node-runnable agent client with proving, key hygiene, and structured logging. (completed 2026-04-12)
+- [x] **Phase 03.1: Agent Wire Format Fix** (INSERTED) — Populate ShieldedProofWireFormat public inputs from `publicInputBytes` in fetch-interceptor. Unblocks agent → facilitator → pool e2e. (completed 2026-04-12)
 - [ ] **Phase 4: Enclave Gate Middleware + Gated Endpoint** — Add the `withEnclaveGate` middleware, one gated demo endpoint, and the enrollment-freeze discipline.
 - [ ] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL cron, cached demo fixtures.
 - [ ] **Phase 6: Demo Recording + Submission** — Rehearsal, final recording, README, DoraHacks writeup, submission.
@@ -150,6 +151,16 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 **Cut decision if Phase 3 slips:** Ship the SDK with Playwright-only proving (drop the Node WASM path), apply cut 5 (pre-generated proofs for the video). The drop-in `agent.fetch(url)` API is non-negotiable — even if proofs are cached, the call site in the demo must look like "agent calls fetch, payment happens". If the SDK is fundamentally broken, the demo replaces `agent.fetch` with a shell script that posts a pre-built proof to the facilitator; the narrative drops "autonomous agent" and becomes "programmatic client".
 
 ---
+
+### Phase 03.1: Agent Wire Format Fix (INSERTED)
+
+**Goal:** Populate the 8 missing ShieldedProofWireFormat public-input fields in `packages/agent/src/fetch-interceptor.ts` by decomposing `proveResult.publicInputBytes` (352 bytes = 11 × 32-byte LE field elements) into the correct wire-format strings (7 decimal u256 strings + 1 big-endian hex string for `extDataHash`). Canonical ordering taken from `circuits/src/policy_tx_2_2.circom` line 10 and cross-checked against `contracts/pool/src/pool.rs` lines 405-436. Closes 03-05 deviation 6. Unblocks the full agent → facilitator → pool e2e flow required by the demo.
+**Requirements**: SDK-01 (reused — no new ID; closes the wire-format sub-gap of agent.fetch transparent 402 handling that 03-VERIFICATION flagged as human_needed)
+**Depends on:** Phase 3
+**Plans:** 1/1 plans complete
+
+Plans:
+- [ ] 03.1-01-PLAN.md — decomposePublicInputs helper + fetch-interceptor wiring (live + fixture paths) + test upgrade (SDK-01 wire-format closure)
 
 ### Phase 4: Enclave Gate Middleware + Gated Endpoint
 **Goal**: Ship the second demo layer — an HTTP middleware that gates an endpoint by ZK membership in an org — and freeze enrollment for recording.

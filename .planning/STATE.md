@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
 current_plan: 5
 status: verifying
-stopped_at: Completed 03-05-PLAN.md (fetch interceptor + createAgent — SDK-01 complete, 10/10 interceptor + 6/6 note-selector tests green, 38/38 agent suite, Phase 3 READY FOR VERIFICATION)
-last_updated: "2026-04-12T21:50:18.477Z"
+stopped_at: Completed 03.1-01-PLAN.md
+last_updated: "2026-04-12T23:27:37.748Z"
 progress:
-  total_phases: 7
-  completed_phases: 4
-  total_plans: 24
-  completed_plans: 22
+  total_phases: 8
+  completed_phases: 5
+  total_plans: 25
+  completed_plans: 23
 ---
 
 # Session State
@@ -63,6 +63,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 | Phase 03-agent-sdk-enclave-agent P03 | 4 min | 1 tasks | 1 files |
 | Phase 03-agent-sdk-enclave-agent P04 | 3 min | 1 tasks | 4 files |
 | Phase 03-agent-sdk-enclave-agent P05 | 9 min | 2 tasks | 7 files |
+| Phase 03.1-agent-wire-format-fix P01 | 5 min | 3 tasks | 4 files |
 
 ## Decisions
 
@@ -140,6 +141,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 03-05]: hashExtData duplicated into packages/agent/src/utils/ rather than re-exported from @enclave/core — keeps core dep-light; agent owns @noble/hashes + @stellar/stellar-sdk deps for independent keccak(XDR ScMap) port
 - [Phase 03-05]: Greedy smallest-sufficient note selection (not largest-first) — resolves plan internal contradiction (docstring vs behavior spec); minimizes change-output size, predictable for demo
 - [Phase 03-05]: Wire format locked: paymentPayload wrapper (C1) + scheme='shielded-exact' + flat proof.a/b/c hex (C3) + snake_case extData (C2); response field is 'transaction' not 'txHash' (C5); 409 = already_spent (C6); Authorization Bearer <authKey> on /settle (M3)
+- [Phase 03.1-01]: decomposePublicInputs kept dependency-free (no utils/extDataHash import); extractFixturePublicInputs supports PRIMARY (hex) + LEGACY shape; invariant guards detect PI[7]!=PI[8] / PI[9]!=PI[10] ordering drift
 
 ## Blockers
 
@@ -158,7 +160,13 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T21:50:18.475Z
-**Stopped at:** Completed 03-05-PLAN.md (fetch interceptor + createAgent — SDK-01 complete, 10/10 interceptor + 6/6 note-selector tests green, 38/38 agent suite, Phase 3 READY FOR VERIFICATION)
+**Last session:** 2026-04-12T23:27:37.745Z
+**Stopped at:** Completed 03.1-01-PLAN.md
 **Resume file:** None
 **Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- 2026-04-12: Phase 03.1 inserted after Phase 3: Agent Wire Format Fix — populate ShieldedProofWireFormat public inputs in fetch-interceptor.ts from `proveResult.publicInputBytes` (352 bytes → 11 decimal strings). Closes 03-05 deviation 6. Unblocks agent → facilitator → pool e2e. (URGENT, pre-demo)
