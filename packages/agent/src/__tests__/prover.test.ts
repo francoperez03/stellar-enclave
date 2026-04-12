@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@jest/globals';
 
 // Unit tests use mock prover to avoid WASM dependency in CI.
 // The [live] test is guarded behind an env var check.
@@ -80,11 +80,8 @@ describe('Prover wrapper (SDK-02, SDK-03, SDK-04)', () => {
   describe('loadProverArtifacts — local path only (SDK-03)', () => {
     it('uses createRequire (not import()) to load CJS WASM modules', async () => {
       const { readFileSync } = await import('node:fs');
-      const { fileURLToPath } = await import('node:url');
-      const path = await import('node:path');
-      const testDir = path.dirname(fileURLToPath(import.meta.url));
       const source = readFileSync(
-        path.resolve(testDir, '..', 'prover.ts'),
+        new URL('../prover.js', import.meta.url).pathname.replace('.js', '.ts'),
         'utf-8',
       );
       expect(source).toContain('createRequire');
@@ -113,8 +110,10 @@ describe('Prover wrapper (SDK-02, SDK-03, SDK-04)', () => {
         new URL('../../../../../../scripts/bench-fixtures/witness-1real-1null.json', import.meta.url),
         'utf-8',
       );
-      const fixture = JSON.parse(fixtureRaw);
+      const fixture = JSON.parse(fixtureRaw) as Record<string, unknown>;
       const { _pool08_evidence, inPublicKey, ...circuitInputs } = fixture;
+      void _pool08_evidence;
+      void inPublicKey;
 
       const handle = await loadProverArtifacts(artifactsPath);
       const result = await prove(handle, JSON.stringify(circuitInputs));

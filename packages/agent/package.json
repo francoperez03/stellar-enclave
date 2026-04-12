@@ -10,8 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist",
-    "test": "jest --no-coverage",
-    "test:watch": "jest --watch --no-coverage"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --no-coverage",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch --no-coverage"
   },
   "dependencies": {
     "@enclave/core": "*",
