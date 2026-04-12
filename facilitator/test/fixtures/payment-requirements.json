@@ -1,0 +1,12 @@
+{
+  "scheme": "shielded-exact",
+  "network": "stellar:testnet",
+  "maxAmountRequired": "1000000",
+  "resource": "https://demo.example/api/ping",
+  "description": "demo x402 endpoint",
+  "mimeType": "application/json",
+  "payTo": "GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI",
+  "maxTimeoutSeconds": 300,
+  "asset": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "extra": null
+}
