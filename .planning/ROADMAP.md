@@ -65,6 +65,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 - [ ] **Phase 4: Enclave Gate Middleware + Gated Endpoint** — Add the `withEnclaveGate` middleware, one gated demo endpoint, and the enrollment-freeze discipline.
 - [x] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL routine, cached demo fixtures. (completed 2026-04-13; Plan 05-07 Tasks 1–3 deferred to recording-day pre-flight)
 - [ ] **Phase 6: Demo Recording + Submission** — Rehearsal, final recording, README, DoraHacks writeup, submission.
+- [ ] **Phase 7: Marketing Landing Page (`apps/landing/`)** — Judges-facing Next.js 15 + Framer Motion + Lenis parallax landing that pitches Enclave's vision and funnels to the console via a "Go to App" CTA.
 
 ## Phase Details
 
@@ -223,6 +224,41 @@ Plans:
 
 ---
 
+### Phase 7: Marketing Landing Page (`apps/landing/`)
+
+**Goal:** Deliver a polished, judges-facing Next.js 15 + Framer Motion 11 + Lenis parallax landing page at `apps/landing/` that pitches Enclave's vision, narrates the shielded-orgs thesis through a scroll-driven hero → problem → how-it-works → three-orgs → try-it → footer sequence, and funnels visitors to the existing Treasury Console at `/enclave.html` via a "Go to App" CTA. The console is untouched; the landing is a new standalone Vercel-deployable project.
+
+**Depends on:** Phase 6 (video and DoraHacks writeup URLs land after Phase 6; the landing reads them via `NEXT_PUBLIC_YOUTUBE_VIDEO_ID` and `NEXT_PUBLIC_DORAHACKS_URL` env vars with graceful fallbacks, so Phase 7 can ship before Phase 6 completes).
+**Requirements**: DEMO-01, DEMO-02, DEMO-04, DEMO-06, SETUP-04, SETUP-07, POOL-02.
+
+**Success Criteria** (what must be TRUE):
+  1. `apps/landing/` is a Next.js 15 + React 19 + Tailwind v4 + Framer Motion 11 + Lenis workspace package with pinned versions from RESEARCH; `cd apps/landing && npm run build` exits 0; brand tokens (cream `#F5F0E8`, gold `#D4A017`, DM Serif Display, Outfit, JetBrains Mono) are ported verbatim from `app/css/tailwind.src.css` into `apps/landing/app/globals.css` (SETUP-07 substrate — narrative-lock infrastructure).
+  2. The landing renders six sections in order: **Hero** (parallax intro + slogan "Your agents. Your rules. Out of sight." in DM Serif Display + dual CTA), **Problem** (editorial), **How it works** (animated SVG diagram with shielded-notes / ASP / facilitator annotations), **Three Orgs** (scroll-linked convergence of Northfield Capital / Ashford Partners / Bayridge Capital cards into a central shielded pool), **Try it** (YouTube demo modal + dual CTA repeat), **Footer** (GitHub / DoraHacks / Stellar Agentic Hackathon 2026 badge / upstream attribution). The sacred slogan appears exactly once as H1 across three lines (DEMO-01, DEMO-02, POOL-02).
+  3. Three persona names `Northfield Capital`, `Ashford Partners`, `Bayridge Capital` appear verbatim in the ThreeOrgs section — no legacy codenames (OrgVault/GuildGate/s402/Acme/Globex/Initech) anywhere in `apps/landing/` (POOL-02 + memory feedback).
+  4. The "Go to App" CTA in both Hero and TryIt sections uses `href={process.env.NEXT_PUBLIC_CONSOLE_URL ?? "/enclave.html"}` so Vercel deploys can override the target per-environment.
+  5. The Footer renders the locked SETUP-04 attribution: `"Built on stellar-private-payments by Nethermind (Apache 2.0 · LGPL for poseidon2)."`, with "Nethermind" used only as byline credit (not as a project trademark). GitHub and DoraHacks links honor `NEXT_PUBLIC_GITHUB_URL` and `NEXT_PUBLIC_DORAHACKS_URL` env vars (DEMO-01, DEMO-04, SETUP-04).
+  6. A Playwright smoke suite in `apps/landing/e2e/` verifies: all 6 sections render, slogan is present as three-line stack, all three persona names present, Go to App href resolves to `/enclave.html` or configured URL, GitHub/DoraHacks links exist, SETUP-04 attribution present, Stellar Agentic Hackathon 2026 badge present. A claim-hygiene spec verifies the page text contains no DEMO-06 forbidden phrases (`mainnet ready`, `security audit`, `per-org on-chain ASP`, legacy codenames) AND asserts the positive SETUP-07 phrasing (`per-org policy off-chain` or `shared shielded pool`) appears (DEMO-06, SETUP-07).
+  7. `apps/landing/README.md` documents local dev, env vars (`NEXT_PUBLIC_CONSOLE_URL`, `NEXT_PUBLIC_YOUTUBE_VIDEO_ID`, `NEXT_PUBLIC_GITHUB_URL`, `NEXT_PUBLIC_DORAHACKS_URL`), build, and Vercel deploy instructions. `apps/landing/vercel.json` pins framework=nextjs and declares the four env vars.
+
+**Plans**: 7 plans across 4 waves (wave 1: scaffold → wave 2: layout/providers → wave 3: 4 parallel section plans → wave 4: deploy + validation)
+  - [x] 07-01-scaffold-apps-landing.md — Next.js 15 + React 19 + Tailwind v4 + Framer Motion 11 + Lenis workspace scaffold with pinned versions; @theme tokens + utility subset ported from `app/css/tailwind.src.css` (SETUP-07 substrate; wave 1) ✓ 2026-04-13
+  - [ ] 07-02-lenis-provider-layout.md — LenisProvider + MotionProvider client wrappers, `next/font/google` wiring, metadata + OG image + icon generators, `lib/constants.ts` env surface, `.env.example` (SETUP-07, DEMO-06; wave 2)
+  - [ ] 07-03-hero-section.md — HeroSection with parallax (useScroll/useTransform), slogan H1, dual CTA + reusable UI primitives (BtnPrimary/BtnGhost/Pill/VideoModal) (DEMO-01, DEMO-02, DEMO-06; wave 3)
+  - [ ] 07-04-problem-how-it-works.md — ProblemSection (RSC, locked editorial copy) + HowItWorks (whileInView) + DiagramSvg (3-node facilitator flow with pathLength arrows; SETUP-07 narrative footnote) (DEMO-01, DEMO-06, SETUP-07; wave 3)
+  - [ ] 07-05-three-orgs-section.md — ThreeOrgs scroll-linked convergence with OrgCard + PoolIcon primitives; locked persona names verbatim; payment-dot pulses staggered (POOL-02, DEMO-06; wave 3)
+  - [ ] 07-06-try-it-footer.md — TryItSection (YouTube thumbnail → VideoModal, HAS_VIDEO-guarded) + Footer (GitHub / DoraHacks / Stellar Agentic Hackathon 2026 badge / SETUP-04 attribution) (DEMO-01, DEMO-02, DEMO-04, DEMO-06, SETUP-04; wave 3)
+  - [ ] 07-07-deploy-validation-smoke-tests.md — Playwright install + smoke.spec (9+ tests) + claim-hygiene.spec (DEMO-06 deny-list + SETUP-07 positive) + apps/landing/README.md + vercel.json + VALIDATION.md finalization (ALL phase reqs; wave 4)
+
+**Wave structure:**
+- Wave 1 (1 plan): 07-01 scaffold
+- Wave 2 (1 plan): 07-02 providers/layout
+- Wave 3 (4 plans, parallel): 07-03 Hero, 07-04 Problem+HowItWorks, 07-05 ThreeOrgs, 07-06 TryIt+Footer
+- Wave 4 (1 plan): 07-07 deploy + validation
+
+**Cut decision if Phase 7 slips:** If wave 3 section plans overrun, drop animation polish first (parallax intensity, stagger delays) before cutting sections — all 6 sections must ship for the narrative to land. If the YouTube video isn't ready when Phase 7 ships, the HAS_VIDEO fallback card ("Demo video coming soon.") is graceful — no code change needed; just leave `NEXT_PUBLIC_YOUTUBE_VIDEO_ID` unset in Vercel until Phase 6 finalizes. If the DoraHacks URL isn't ready, the footer link defaults to `"#"` — safe to ship and update via Vercel env vars post-submission. DO NOT cut the Playwright smoke suite or the claim-hygiene spec — they are cheap and defuse DEMO-06 regressions.
+
+---
+
 ## Daily Cadence
 
 Solo builder, one day per phase as the default, with overlap allowed on low-risk phases and explicit buffer on the recording side.
@@ -240,23 +276,25 @@ Solo builder, one day per phase as the default, with overlap allowed on low-risk
 
 **Note on the 7-vs-8-day count:** The hackathon window is 2026-04-10 through 2026-04-17 inclusive = 8 calendar days. The cadence above uses day 5 (2026-04-14) as the last pure-build day, day 6 (2026-04-15) as rehearsal-per-Pitfall-17, day 7 (2026-04-16) as final recording, day 8 (2026-04-17) as rescue + submission buffer. This matches DEMO-05 ("rehearsal on day 5, final on day 6, submission by day 7") modulo the inclusive count. **Do not re-interpret the dates — the clock is the clock.**
 
+**Phase 7 scheduling note:** Phase 7 (marketing landing) is a parallel track — it depends on Phase 6 only for URL values (video ID, DoraHacks URL), which it reads from env vars with safe fallbacks. The landing can be scaffolded and deployed alongside Phase 6 rehearsal/recording; final env-var population happens after Phase 6 finalizes URLs.
+
 ---
 
 ## Requirement → Phase Traceability
 
-All 54 v1 requirements from REQUIREMENTS.md, mapped to exactly one phase. Zero unmapped.
+All 54 v1 requirements from REQUIREMENTS.md, mapped to exactly one phase. Zero unmapped. Phase 7 reuses DEMO-01/02/04/06 + SETUP-04/07 + POOL-02 as a marketing surface — no new requirement IDs introduced.
 
 | Requirement | Phase | Category |
 |-------------|-------|----------|
 | SETUP-01 | Phase 0 | Setup & Fork Hygiene |
 | SETUP-02 | Phase 0 | Setup & Fork Hygiene |
 | SETUP-03 | Phase 0 | Setup & Fork Hygiene |
-| SETUP-04 | Phase 0 | Setup & Fork Hygiene |
+| SETUP-04 | Phase 0 + **Phase 7** | Setup & Fork Hygiene (credit on landing footer) |
 | SETUP-05 | Phase 0 | Setup & Fork Hygiene (day-1 smoke test, Pitfalls 10/14) |
 | SETUP-06 | Phase 0 | Setup & Fork Hygiene (day-1 prover benchmark, Pitfall 6) |
-| SETUP-07 | Phase 0 | Setup & Fork Hygiene (narrative lock, Pitfall 1) |
+| SETUP-07 | Phase 0 + **Phase 7** | Setup & Fork Hygiene (narrative lock on landing copy) |
 | POOL-01 | Phase 1 | Shielded Pool Integration (fresh redeploy as admin) |
-| POOL-02 | Phase 1 | Shielded Pool Integration |
+| POOL-02 | Phase 1 + **Phase 7** | Shielded Pool Integration (three persona names on landing) |
 | POOL-03 | Phase 1 | Shielded Pool Integration (Model X shared key) |
 | POOL-04 | Phase 1 | Shielded Pool Integration (Pitfall 8) |
 | POOL-05 | Phase 1 | Shielded Pool Integration (Pitfall 10) |
@@ -290,12 +328,12 @@ All 54 v1 requirements from REQUIREMENTS.md, mapped to exactly one phase. Zero u
 | DASH-01 | Phase 5 | Local Demo Dashboard |
 | DASH-02 | Phase 5 | Local Demo Dashboard |
 | DASH-03 | Phase 5 | Local Demo Dashboard (cut 1 preempt) |
-| DEMO-01 | Phase 6 | Hackathon Deliverables |
-| DEMO-02 | Phase 6 | Hackathon Deliverables |
+| DEMO-01 | Phase 6 + **Phase 7** | Hackathon Deliverables (GitHub repo — footer link on landing) |
+| DEMO-02 | Phase 6 + **Phase 7** | Hackathon Deliverables (video — surfaced in landing TryIt + Hero) |
 | DEMO-03 | Phase 6 | Hackathon Deliverables |
-| DEMO-04 | Phase 6 | Hackathon Deliverables |
+| DEMO-04 | Phase 6 + **Phase 7** | Hackathon Deliverables (DoraHacks — footer link on landing) |
 | DEMO-05 | Phase 6 | Hackathon Deliverables (Pitfall 17) |
-| DEMO-06 | Phase 6 | Hackathon Deliverables (Pitfall 1 claim hygiene) |
+| DEMO-06 | Phase 6 + **Phase 7** | Hackathon Deliverables (claim hygiene enforced by Playwright on landing) |
 | OPS-01 | Phase 5 | Operational Hardening |
 | OPS-02 | Phase 5 | Operational Hardening (Pitfall 10) |
 | OPS-03 | Phase 5 | Operational Hardening (cut 5 preempt, Pitfall 17) |
@@ -307,6 +345,7 @@ All 54 v1 requirements from REQUIREMENTS.md, mapped to exactly one phase. Zero u
 - Mapped to phases: **54** ✓
 - Unmapped: **0**
 - Requirements per phase: Phase 0 = 10, Phase 1 = 12, Phase 2 = 8, Phase 3 = 7, Phase 4 = 5, Phase 5 = 6, Phase 6 = 6 → **54 total ✓**
+- Phase 7 = marketing surface over 7 existing IDs (DEMO-01/02/04/06 + SETUP-04/07 + POOL-02) — no new IDs introduced, counts unchanged.
 
 ---
 
@@ -321,6 +360,7 @@ For the hackathon submission to go out, ALL of the following must be verifiable:
 5. **License + upstream hygiene preserved** — `git diff upstream/main -- LICENSE NOTICE circuits/LICENSE` returns empty; per-phase feature branches (`feat/phase-N`) merged into `develop`, never pushed to `NethermindEth/stellar-private-payments`. (SETUP-01, SETUP-03)
 6. **No key material in git history** — `git secrets` / manual scan clean. (OPS-04)
 7. **Backup recording exists** from day 5 (2026-04-15) and is ready to submit if day-6 final recording fails. (DEMO-05)
+8. **Landing page live on Vercel** (Phase 7) — `https://enclave.vercel.app/` (or equivalent) renders all 6 sections with Northfield/Ashford/Bayridge personas, "Go to App" CTA resolves to live console, Playwright suite green, no forbidden claim phrases. (Phase 7)
 
 If any of the above is false at 2026-04-17 noon, the rescue buffer (day 8 = 2026-04-17 itself) is spent on whichever is missing. The submission does NOT slip past 2026-04-17 under any circumstance.
 
@@ -329,7 +369,7 @@ If any of the above is false at 2026-04-17 noon, the rescue buffer (day 8 = 2026
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 7 can run in parallel with Phase 6 since it only consumes URL values).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -340,6 +380,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 4. Enclave Gate Middleware + Gated Endpoint | 0/2 | Planned | - |
 | 5. Dashboard + Ops Hardening | 7/7 | Complete (partial — 05-07 Tasks 1–3 deferred to recording-day pre-flight) | 2026-04-13 |
 | 6. Demo Recording + Submission | 0/4 | Not started | Planned (4 plans) |
+| 7. Marketing Landing Page (`apps/landing/`) | 0/7 | Planned | Planned (7 plans, 4 waves) 2026-04-13 |
 
 ---
-*Roadmap created: 2026-04-10 from PROJECT.md + REQUIREMENTS.md + PITFALLS.md. Coarse granularity, 7 phases, 54/54 requirements mapped. Updated 2026-04-10 with ASP architectural decisions: Model X (shared org spending key), deterministic blinding=0, fresh contract redeploys with us as admin, permissionless asp-membership via `set_admin_insert_only(false)`, empty asp-non-membership SMT, facilitator gas-relaying for spends (meta-tx model), and Phase-0 verification of upstream prover null-input behavior. Phase 0 planned 2026-04-10: 5 plans with wave structure (wave 1: 00-01 hygiene; wave 2: 00-02 scaffold, 00-03 narrative, 00-04 smoke test; wave 3: 00-05 benchmark). Branch convention locked as per-phase `feat/phase-N` off `develop`.*
+*Roadmap created: 2026-04-10 from PROJECT.md + REQUIREMENTS.md + PITFALLS.md. Coarse granularity, 7 phases, 54/54 requirements mapped. Updated 2026-04-10 with ASP architectural decisions: Model X (shared org spending key), deterministic blinding=0, fresh contract redeploys with us as admin, permissionless asp-membership via `set_admin_insert_only(false)`, empty asp-non-membership SMT, facilitator gas-relaying for spends (meta-tx model), and Phase-0 verification of upstream prover null-input behavior. Phase 0 planned 2026-04-10: 5 plans with wave structure (wave 1: 00-01 hygiene; wave 2: 00-02 scaffold, 00-03 narrative, 00-04 smoke test; wave 3: 00-05 benchmark). Branch convention locked as per-phase `feat/phase-N` off `develop`. Phase 7 planned 2026-04-13: 7 plans across 4 waves (wave 1: 07-01 scaffold; wave 2: 07-02 layout/providers; wave 3: 07-03 hero + 07-04 problem/howitworks + 07-05 threeorgs + 07-06 tryit/footer parallel; wave 4: 07-07 deploy/validation). Marketing surface over 7 existing requirement IDs (DEMO-01/02/04/06 + SETUP-04/07 + POOL-02) — no new IDs introduced.*

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 06-demo-recording-submission
-current_plan: Franco-scope pending (record rehearsal + final, upload YouTube, publish DoraHacks)
-status: staged-for-franco
-stopped_at: Phase 6 agent-scope closed on 2026-04-12 — 4 plans staged, 3 Franco sessions remaining per FRANCO-CHECKLIST.md
-last_updated: "2026-04-12T22:45:00-03:00"
+current_phase: 07-marketing-landing-page-with-framer-motion-parallax-explains-product-vision-hero-sections-derived-from-existing-docs-go-to-app-cta-enclave-html
+current_plan: "02"
+status: in_progress
+stopped_at: "Completed 07-01-scaffold-apps-landing-PLAN.md"
+last_updated: "2026-04-13T11:23:52Z"
 progress:
-  total_phases: 8
-  completed_phases: 7
-  total_plans: 36
-  completed_plans: 36
+  total_phases: 9
+  completed_phases: 8
+  total_plans: 37
+  completed_plans: 37
 ---
 
 # Session State
@@ -38,8 +38,9 @@ Phase 03.1-agent-wire-format-fix: [██████████] 100% (1/1 pla
 Phase 04-enclave-gate-middleware-gated-endpoint: [██████████] 100% (2/2 plans) ✓
 Phase 05-dashboard-ops-hardening: [██████████] 100% (7/7 plans) ✓
 Phase 06-demo-recording-submission: [██████████] 100% (4/4 plans, agent-scope closed; 3 Franco sessions pending)
+Phase 07-marketing-landing-page: [█░░░░░░░░░] 17% (1/6 plans in progress)
 
-Overall milestone: 7/8 phases complete (all except live-submission human actions), 36/36 plans staged.
+Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 37/37 plans staged.
 
 ## Performance Metrics
 
@@ -77,6 +78,7 @@ Overall milestone: 7/8 phases complete (all except live-submission human actions
 | Phase 05-dashboard-ops-hardening P04 | 5 min | 2 tasks | 2 files |
 | Phase 05-dashboard-ops-hardening P06 | 3 min | 2 tasks | 4 files |
 | Phase 05-dashboard-ops-hardening P07 | ~4 min | 1 executed + 3 deferred tasks | 2 files |
+| 07-marketing-landing-page | 01 | 4 min | 2 | 10 | 2026-04-13 |
 
 ## Decisions
 
@@ -181,6 +183,11 @@ Overall milestone: 7/8 phases complete (all except live-submission human actions
 - [Phase 06]: `.planning/` is gitignored per project convention (00-01 decision); Phase 6 DoraHacks writeup + form + SUMMARY files + FRANCO-CHECKLIST committed via `--allow-empty` empty commits preserving the atomic-per-task audit trail. Agent artifacts (scripts, PNG/SVG, YOUTUBE-UPLOAD.txt in demo/final/) are tracked normally.
 - [Phase 06]: One helper script per URL substitution (`substitute-video-url.sh`, `substitute-dorahacks-url.sh`) instead of one combined flag-driven script — each is atomic, has single-URL responsibility, and separates YouTube-format validation (regex only; YouTube returns 200 for any shape) from DoraHacks-format validation (regex + curl HEAD live-reachability).
 
+- [Phase 07-01]: Use @tailwindcss/postcss (v4) not legacy tailwindcss PostCSS plugin — required for Tailwind v4 compatibility in postcss.config.mjs
+- [Phase 07-01]: tsconfig.json overrides NodeNext base with module: ESNext + moduleResolution: Bundler — required for Next.js App Router compatibility in the monorepo
+- [Phase 07-01]: .theme-light scope prefix dropped from all utility classes in globals.css — landing is always light-mode; the scoping was a dashboard-specific pattern that adds no value here
+- [Phase 07-01]: npm install from repo root (never from apps/landing/) to preserve workspace hoisting and symlink resolution
+
 ## Blockers
 
 None.
@@ -199,9 +206,9 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-12T22:45:00-03:00
-**Stopped at:** Phase 6 agent-scope complete — Franco executes 3 sessions per FRANCO-CHECKLIST.md
-**Resume file:** .planning/phases/06-demo-recording-submission/FRANCO-CHECKLIST.md
+**Last session:** 2026-04-13T05:54:44.246Z
+**Stopped at:** Phase 7 UI-SPEC approved
+**Resume file:** .planning/phases/07-marketing-landing-page-with-framer-motion-parallax-explains-product-vision-hero-sections-derived-from-existing-docs-go-to-app-cta-enclave-html/07-UI-SPEC.md
 **Next action:** Franco — 2026-04-15 AM run §1 (Day 5 rehearsal). Then §3 (Day 6 final), §4 (YouTube upload + `./scripts/substitute-video-url.sh`), §5-7 on 2026-04-17 (preflight + claim-hygiene + DoraHacks publish + `./scripts/substitute-dorahacks-url.sh`).
 
 ## Accumulated Context
@@ -209,3 +216,4 @@ None.
 ### Roadmap Evolution
 
 - 2026-04-12: Phase 03.1 inserted after Phase 3: Agent Wire Format Fix — populate ShieldedProofWireFormat public inputs in fetch-interceptor.ts from `proveResult.publicInputBytes` (352 bytes → 11 decimal strings). Closes 03-05 deviation 6. Unblocks agent → facilitator → pool e2e. (URGENT, pre-demo)
+- 2026-04-13: Phase 7 added: Marketing landing page with Framer Motion + parallax — explains product vision (sourced from existing docs/skills), aesthetic with parallax sections, "Go to App" CTA routes to /enclave.html.
