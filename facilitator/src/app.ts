@@ -12,6 +12,7 @@ import { createVerifyRoute } from "./routes/verify.js";
 import { createSettleRoute } from "./routes/settle.js";
 import { createSupportedRoute } from "./routes/supported.js";
 import { createHealthRoute } from "./routes/health.js";
+import { createSettlementsRoute } from "./routes/settlements.js";
 
 export interface CreateAppOptions {
   corsOrigins?: string[];
@@ -29,6 +30,7 @@ export function createApp(state: FacilitatorState, options: CreateAppOptions = {
   app.use("/settle", createSettleRoute(state));
   app.use("/supported", createSupportedRoute(state));
   app.use("/health", createHealthRoute(state));
+  app.use("/settlements", createSettlementsRoute(state));
 
   app.use((_req, res) => res.status(404).json({ error: "not_found" }));
 

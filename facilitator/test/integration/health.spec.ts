@@ -3,7 +3,10 @@ import request from "supertest";
 import { createApp } from "../../src/app.js";
 import { createInitialState } from "../../src/state.js";
 import { NullifierCache } from "../../src/replay/cache.js";
+import { createSettlementsLog } from "../../src/settlements/log.js";
 import pino from "pino";
+import os from "node:os";
+import path from "node:path";
 
 function makeMockLogger() {
   return pino({ level: "silent" });
@@ -16,6 +19,7 @@ function makeState() {
     client: null,
     vKey: {},
     logger: makeMockLogger(),
+    settlementsLog: createSettlementsLog({ path: path.join(os.tmpdir(), `health-test-${Date.now()}.jsonl`) }),
   });
 }
 

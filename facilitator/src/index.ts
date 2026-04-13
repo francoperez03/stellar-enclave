@@ -6,6 +6,7 @@ import { hydrateNullifierCache } from "./chain/hydrateNullifierCache.js";
 import { loadVerifyingKey } from "./mock/offChainVerify.js";
 import { createInitialState } from "./state.js";
 import { createApp } from "./app.js";
+import { createSettlementsLog } from "./settlements/log.js";
 
 async function bootstrap(): Promise<void> {
   Env.validate();
@@ -39,12 +40,15 @@ async function bootstrap(): Promise<void> {
     logger.info({ path: Env.circuitVkeyPath }, "mock mode: loaded verifying key");
   }
 
+  const settlementsLog = createSettlementsLog({ path: Env.settlementsPath });
+
   const state = createInitialState({
     mode: Env.facilitatorMode,
     cache,
     client,
     vKey,
     logger,
+    settlementsLog,
   });
 
   const app = createApp(state, { corsOrigins: Env.corsOrigins });

@@ -3,11 +3,13 @@ import request from "supertest";
 import { createApp } from "../../src/app.js";
 import { createInitialState } from "../../src/state.js";
 import { NullifierCache } from "../../src/replay/cache.js";
+import { createSettlementsLog } from "../../src/settlements/log.js";
 import { Env } from "../../src/config/env.js";
 import pino from "pino";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import os from "node:os";
 import { Keypair } from "@stellar/stellar-sdk";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -88,6 +90,7 @@ function makeOnChainState(rpcOverrides: Record<string, unknown> = {}) {
     client: client as any,
     vKey: null,
     logger: makeMockLogger(),
+    settlementsLog: createSettlementsLog({ path: path.join(os.tmpdir(), `settle-test-${Date.now()}.jsonl`) }),
   });
 }
 
@@ -99,6 +102,7 @@ function makeMockState() {
     client: null,
     vKey,
     logger: makeMockLogger(),
+    settlementsLog: createSettlementsLog({ path: path.join(os.tmpdir(), `settle-test-${Date.now()}.jsonl`) }),
   });
 }
 

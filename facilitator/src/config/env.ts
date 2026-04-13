@@ -25,6 +25,7 @@ interface ParsedEnv {
   cacheHydrateLedgers: number;
   circuitVkeyPath: string;
   logLevel: string;
+  settlementsPath: string;
 }
 
 const REQUIRED_VARS = [
@@ -92,6 +93,7 @@ function parse(): ParsedEnv {
     cacheHydrateLedgers: readInt("FACILITATOR_HYDRATE_LEDGERS", 120_960),
     circuitVkeyPath: readString("FACILITATOR_VKEY_PATH", "wallets/circuits/transact2.vkey.json"),
     logLevel: readString("LOG_LEVEL", "info"),
+    settlementsPath: readString("FACILITATOR_SETTLEMENTS_PATH", "./data/settlements.jsonl"),
   };
 }
 
@@ -126,4 +128,5 @@ export class Env {
   static get cacheHydrateLedgers(): number { return Env.state.cacheHydrateLedgers; }
   static get circuitVkeyPath(): string { return Env.state.circuitVkeyPath; }
   static get logLevel(): string { return Env.state.logLevel; }
+  static get settlementsPath(): string { return Env.state.settlementsPath; }
 }

@@ -3,11 +3,13 @@ import request from "supertest";
 import { createApp } from "../../src/app.js";
 import { createInitialState } from "../../src/state.js";
 import { NullifierCache } from "../../src/replay/cache.js";
+import { createSettlementsLog } from "../../src/settlements/log.js";
 import { Env } from "../../src/config/env.js";
 import pino from "pino";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import os from "node:os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, "../fixtures");
@@ -76,6 +78,7 @@ function makeOnChainState(overrides: Record<string, unknown> = {}) {
     client: client as any,
     vKey: null,
     logger: makeMockLogger(),
+    settlementsLog: createSettlementsLog({ path: path.join(os.tmpdir(), `verify-test-${Date.now()}.jsonl`) }),
   });
 }
 
@@ -87,6 +90,7 @@ function makeMockState() {
     client: null,
     vKey,
     logger: makeMockLogger(),
+    settlementsLog: createSettlementsLog({ path: path.join(os.tmpdir(), `verify-test-${Date.now()}.jsonl`) }),
   });
 }
 

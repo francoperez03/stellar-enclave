@@ -6,8 +6,11 @@ import { createApp } from "../../src/app.js";
 import { createInitialState } from "../../src/state.js";
 import { createStellarClient } from "../../src/chain/stellarClient.js";
 import { NullifierCache } from "../../src/replay/cache.js";
+import { createSettlementsLog } from "../../src/settlements/log.js";
 import { hydrateNullifierCache } from "../../src/chain/hydrateNullifierCache.js";
 import { loadE2eFixture } from "../../src/cli/loadFixtureForE2e.js";
+import os from "node:os";
+import path from "node:path";
 
 const E2E = process.env.E2E_TESTNET === "1";
 const describeE2e = E2E ? describe : describe.skip;
@@ -43,7 +46,8 @@ describeE2e("facilitator e2e (testnet)", () => {
       logger,
     });
 
-    const state = createInitialState({ mode: "on_chain", cache, client, vKey: null, logger });
+    const settlementsLog = createSettlementsLog({ path: path.join(os.tmpdir(), `e2e-settlements-${Date.now()}.jsonl`) });
+    const state = createInitialState({ mode: "on_chain", cache, client, vKey: null, logger, settlementsLog });
     app = createApp(state);
   }, 120_000);
 

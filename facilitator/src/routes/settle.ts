@@ -127,6 +127,17 @@ export function createSettleRoute(state: FacilitatorState): Router {
         }
         for (const n of claimedOrder) state.cache.commit(n, mockResult.mockTxHash);
         state.metrics.totalSettlements += 1;
+        try {
+          await state.settlementsLog.append({
+            ts: Date.now(),
+            nullifier: nullifiers[0],
+            recipient: extData.recipient,
+            amount: extData.ext_amount,
+            txHash: mockResult.mockTxHash,
+          });
+        } catch (err) {
+          state.logger.warn({ err }, "settlements log append failed");
+        }
         return res.status(200).json({
           success: true,
           transaction: mockResult.mockTxHash,
@@ -169,6 +180,17 @@ export function createSettleRoute(state: FacilitatorState): Router {
       // 4c. Commit all claimed nullifiers with confirmed tx hash
       for (const n of claimedOrder) state.cache.commit(n, result.txHash);
       state.metrics.totalSettlements += 1;
+      try {
+        await state.settlementsLog.append({
+          ts: Date.now(),
+          nullifier: nullifiers[0],
+          recipient: extData.recipient,
+          amount: extData.ext_amount,
+          txHash: result.txHash,
+        });
+      } catch (err) {
+        state.logger.warn({ err }, "settlements log append failed");
+      }
       return res.status(200).json({
         success: true,
         transaction: result.txHash,

@@ -2,6 +2,7 @@ import type { Logger } from "pino";
 import type { NullifierCache } from "./replay/cache.js";
 import type { StellarClient } from "./chain/stellarClient.js";
 import type { FacilitatorMode } from "./config/env.js";
+import type { SettlementsLog } from "./settlements/log.js";
 
 export interface FacilitatorMetrics {
   totalSettlements: number;
@@ -18,6 +19,8 @@ export interface FacilitatorState {
   logger: Logger;
   /** Memoized latest-seen pool root for /health, updated on every readBalanceSnapshot. */
   lastSeenPoolRoot: string;
+  /** Append-only persistent settlements log (JSONL-backed). */
+  settlementsLog: SettlementsLog;
 }
 
 export function createInitialState(params: {
@@ -26,6 +29,7 @@ export function createInitialState(params: {
   client: StellarClient | null;
   vKey: unknown | null;
   logger: Logger;
+  settlementsLog: SettlementsLog;
 }): FacilitatorState {
   return {
     ...params,
