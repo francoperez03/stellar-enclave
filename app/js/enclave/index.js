@@ -325,7 +325,7 @@ function getFacilitatorUrl() {
 function getDemoUrl() {
     return (
         (typeof window !== 'undefined' && window.ENCLAVE_CONFIG?.demoUrl) ||
-        'http://localhost:4030/treasury/exchange-rate'
+        'http://localhost:4030/api/treasury/report'
     );
 }
 

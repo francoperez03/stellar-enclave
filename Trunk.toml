@@ -45,10 +45,11 @@ cp scripts/deployments.json $TRUNK_STAGING_DIR/ 2>/dev/null || true
 mkdir -p $TRUNK_STAGING_DIR/js/enclave
 cp app/enclave.html $TRUNK_STAGING_DIR/ 2>/dev/null || true
 
-# Build-time config — FACILITATOR_URL env var with localhost default.
+# Build-time config — FACILITATOR_URL + DEMO_URL env vars with localhost defaults.
 # Consumed by app/js/enclave/index.js via window.ENCLAVE_CONFIG.
 FACILITATOR_URL_VALUE="${FACILITATOR_URL:-http://localhost:4021}"
-printf 'window.ENCLAVE_CONFIG=%s;\\n' "{\\"facilitatorUrl\\":\\"$FACILITATOR_URL_VALUE\\"}" > $TRUNK_STAGING_DIR/js/config.js
+DEMO_URL_VALUE="${DEMO_URL:-http://localhost:4030/api/treasury/report}"
+printf 'window.ENCLAVE_CONFIG=%s;\\n' "{\\"facilitatorUrl\\":\\"$FACILITATOR_URL_VALUE\\",\\"demoUrl\\":\\"$DEMO_URL_VALUE\\"}" > $TRUNK_STAGING_DIR/js/config.js
 """]
 
 # Bundle JS with esbuild
