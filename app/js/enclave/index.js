@@ -21,6 +21,7 @@ import { enrollAgent } from './enroll.js';
 import { deriveOrgKeysFromFreighter, getCachedOrgKeys, setCachedOrgKeys } from './keys.js';
 import { getOrgByAdmin, listAgents } from './registry.js';
 import { triggerBundleDownload } from './bundle.js';
+import { downloadAgentPackageZip, downloadAgentPackageMarkdown } from './agent-package.js';
 import { loadDeployedContracts, readPoolState, readASPMembershipState, readASPNonMembershipState, readSacBalance } from '../stellar.js';
 import { StateManager } from '../state/index.js';
 import { renderDashboard } from './dashboard.js';
@@ -33,6 +34,11 @@ const state = {
     wallet: { connected: false, address: null, network: null },
     deployments: null,
     activeOrg: null,
+    // Most recently enrolled agent bundle in this session. Cached in memory only —
+    // re-enrollment or page reload resets it; the user must re-enroll to get a new
+    // bundle they can export (the admin privkey is the only way to re-derive).
+    lastAgentBundle: null,
+    lastAgentName: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -60,6 +66,8 @@ const els = {
     depositBtn:           document.getElementById('deposit-btn'),
     depositBtnText:       document.getElementById('deposit-btn-text'),
     enrollAgentBtn:       document.getElementById('enroll-agent-btn'),
+    exportPkgZipBtn:      document.getElementById('export-pkg-zip-btn'),
+    exportPkgMdBtn:       document.getElementById('export-pkg-md-btn'),
     enrollModal:          document.getElementById('enroll-modal'),
     enrollNameInput:      document.getElementById('enroll-agent-name-input'),
     enrollNameError:      document.getElementById('enroll-name-error'),
@@ -307,10 +315,54 @@ async function renderForCurrentAccount() {
  *
  * @param {string} orgId
  */
-async function autoLoadDashboard(orgId) {
-    const facilitatorUrl =
+function getFacilitatorUrl() {
+    return (
         (typeof window !== 'undefined' && window.ENCLAVE_CONFIG?.facilitatorUrl) ||
-        'http://localhost:4021';
+        'http://localhost:4021'
+    );
+}
+
+function getDemoUrl() {
+    return (
+        (typeof window !== 'undefined' && window.ENCLAVE_CONFIG?.demoUrl) ||
+        'http://localhost:4030/treasury/exchange-rate'
+    );
+}
+
+function refreshExportPkgButtons() {
+    const enabled = !!state.lastAgentBundle;
+    if (els.exportPkgZipBtn) els.exportPkgZipBtn.disabled = !enabled;
+    if (els.exportPkgMdBtn)  els.exportPkgMdBtn.disabled  = !enabled;
+}
+
+async function exportAgentPackage(format) {
+    if (!state.lastAgentBundle) {
+        return showToast('Enroll an agent first — packages are per-agent.', 'error');
+    }
+    try {
+        const notesBlob = await StateManager.exportNotes();
+        const args = {
+            bundle: state.lastAgentBundle,
+            notesBlob,
+            agentName: state.lastAgentName,
+            facilitatorUrl: getFacilitatorUrl(),
+            demoUrl: getDemoUrl(),
+        };
+        if (format === 'markdown') {
+            await downloadAgentPackageMarkdown(args);
+            logActivity(`Agent package (Markdown) downloaded for ${state.lastAgentName}`);
+        } else {
+            await downloadAgentPackageZip(args);
+            logActivity(`Agent package (ZIP) downloaded for ${state.lastAgentName}`);
+        }
+    } catch (e) {
+        showToast(`Export failed: ${e.message ?? e}`, 'error');
+        logActivity(`Export failed: ${e.message ?? e}`);
+    }
+}
+
+async function autoLoadDashboard(orgId) {
+    const facilitatorUrl = getFacilitatorUrl();
     try {
         await renderDashboard({
             orgId,
@@ -514,9 +566,28 @@ async function handleEnrollSubmit() {
             agentName: name,
             deployments: state.deployments,
         });
-        triggerBundleDownload(bundle, name);
-        showToast(`Enrolled ${name} \u2014 bundle downloaded.`, 'success');
+        state.lastAgentBundle = bundle;
+        state.lastAgentName = name;
+
+        // Auto-download the ZIP package on enrollment — the most useful default.
+        try {
+            const notesBlob = await StateManager.exportNotes();
+            await downloadAgentPackageZip({
+                bundle,
+                notesBlob,
+                agentName: name,
+                facilitatorUrl: getFacilitatorUrl(),
+                demoUrl: getDemoUrl(),
+            });
+            showToast(`Enrolled ${name} \u2014 agent package (ZIP) downloaded.`, 'success');
+        } catch (zipErr) {
+            // Fallback: plain bundle download so the user still has something usable.
+            triggerBundleDownload(bundle, name);
+            showToast(`Enrolled ${name} \u2014 bundle downloaded (package export failed: ${zipErr.message}).`, 'warning');
+            logActivity(`Agent package ZIP failed, fell back to plain bundle: ${zipErr.message}`);
+        }
         logActivity(`Enrolled agent ${name}`);
+        refreshExportPkgButtons();
         closeEnrollModal();
         await renderForCurrentAccount();
     } catch (e) {
@@ -593,6 +664,8 @@ async function init() {
     els.enrollAgentBtn.addEventListener('click', openEnrollModal);
     els.enrollCloseBtn.addEventListener('click', closeEnrollModal);
     els.enrollSubmitBtn.addEventListener('click', handleEnrollSubmit);
+    els.exportPkgZipBtn?.addEventListener('click', () => exportAgentPackage('zip'));
+    els.exportPkgMdBtn?.addEventListener('click', () => exportAgentPackage('markdown'));
     els.reloadPageBtn.addEventListener('click', () => location.reload());
 
     // Modal dismiss on Escape
