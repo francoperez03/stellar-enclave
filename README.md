@@ -12,6 +12,8 @@ Put differently: there is exactly one shared on-chain ASP for the whole pool, an
 
 This is a deliberate architectural lock. Per-org on-chain ASPs are technically infeasible on the current pool contract (the pool hard-codes one ASP root; see `PITFALLS.md §1`). Ship-ready designs for per-org on-chain ASPs are deferred to v2 (Approach B).
 
+![Enclave architecture — three rival quant funds share one shielded pool, per-org policy enforced off-chain](docs/enclave-architecture.png)
+
 ## What's in the box
 
 - **@enclave/treasury** — CLI for org admins: bootstrap org, derive shared org spending key, deposit testnet USDC, enroll agent members (off-chain).
