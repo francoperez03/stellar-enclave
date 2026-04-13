@@ -26,15 +26,26 @@ export function generateRunScript({ facilitatorUrl, demoUrl }) {
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Repo location — override via env if you cloned elsewhere
+export ENCLAVE_REPO_PATH="\${ENCLAVE_REPO_PATH:-${REPO_PATH_DEFAULT}}"
+
 # Paths (override via env if needed)
 export ENCLAVE_BUNDLE_PATH="$PWD/bundle.json"
 export ENCLAVE_NOTES_PATH="$PWD/notes.json"
-export ENCLAVE_PROVING_ARTIFACTS_PATH="\${ENCLAVE_PROVING_ARTIFACTS_PATH:-${REPO_PATH_DEFAULT}/dist}"
+export ENCLAVE_PROVING_ARTIFACTS_PATH="\${ENCLAVE_PROVING_ARTIFACTS_PATH:-$ENCLAVE_REPO_PATH/dist}"
 
 # Service URLs (override via env if deploying elsewhere)
 export FACILITATOR_URL="\${FACILITATOR_URL:-${facilitatorUrl}}"
-DEMO_URL="\${DEMO_URL:-${demoUrl}}"
+export DEMO_URL="\${DEMO_URL:-${demoUrl}}"
 
+AGENT_MODULE="$ENCLAVE_REPO_PATH/packages/agent/dist/index.js"
+if [[ ! -f "$AGENT_MODULE" ]]; then
+  echo "[agent-package] agent module not found at $AGENT_MODULE" >&2
+  echo "[agent-package] set ENCLAVE_REPO_PATH to your stellar-enclave checkout and re-run" >&2
+  exit 1
+fi
+
+echo "[agent-package] repo:       $ENCLAVE_REPO_PATH"
 echo "[agent-package] bundle:     $ENCLAVE_BUNDLE_PATH"
 echo "[agent-package] notes:      $ENCLAVE_NOTES_PATH"
 echo "[agent-package] artifacts:  $ENCLAVE_PROVING_ARTIFACTS_PATH"
@@ -42,13 +53,13 @@ echo "[agent-package] facilitator:$FACILITATOR_URL"
 echo "[agent-package] demo:       $DEMO_URL"
 echo
 
-node -e "(async () => {
-  const { createAgent } = await import('@enclave/agent');
-  const agent = await createAgent();
-  const res = await agent.fetch(process.env.DEMO_URL);
-  console.log('status:', res.status);
-  console.log('body:  ', await res.text());
-})();"
+node --input-type=module -e "
+import { createAgent } from '$AGENT_MODULE';
+const agent = await createAgent();
+const res = await agent.fetch(process.env.DEMO_URL);
+console.log('status:', res.status);
+console.log('body:  ', await res.text());
+"
 `;
 }
 
