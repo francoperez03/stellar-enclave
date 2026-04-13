@@ -160,6 +160,14 @@ export async function depositForOrg(params = {}) {
 
     const proofResult = await generateDepositProof(proofParams, {});
 
+    // Capture the pool leaf index BEFORE the tx lands — output_commitment0
+    // (the real, spendable note) will deterministically occupy this slot.
+    // Used below to persist the note into user_notes for agent SDK consumption.
+    const myLeafIndexBeforeSubmit =
+        typeof stateManager?.getPoolNextIndex === 'function'
+            ? stateManager.getPoolNextIndex()
+            : null;
+
     onStatus?.('Submitting deposit to pool contract...');
     const result = await submitDeposit(proofResult, signerOptions);
 
@@ -206,6 +214,38 @@ export async function depositForOrg(params = {}) {
         amount:     amountStroops.toString(),
         nullifier:  nullifierDecimal,   // Plan 05-02 — decimal bigint string, same form as ShieldedProofWireFormat.inputNullifiers[]
     });
+
+    // Phase 6 / agent-spend bridge — persist the full private data to
+    // `user_notes` so the agent SDK's loadNotes() path can read it. The
+    // enclave deposit flow stores only the lightweight cross-ref tag in
+    // enclave_note_tags; without this additional save, the blinding + leaf
+    // index needed to re-sign at spend time would be lost forever when the
+    // proofResult goes out of scope. Merkle paths are NOT persisted here —
+    // they drift with every subsequent deposit and are recomputed fresh at
+    // export time by notes-export.js.
+    //
+    // leafIndex is captured from the pool tree's next-index BEFORE the
+    // transaction lands; output_commitment0 (the real note) deterministically
+    // occupies that slot. output_commitment1 (zero-amount change) takes
+    // next+1 and we discard it — the change note is never spendable.
+    try {
+        const myLeafIndex = myLeafIndexBeforeSubmit != null ? myLeafIndexBeforeSubmit : 0;
+        await stateManager?.saveNote?.({
+            commitment: commitment0Hex,
+            privateKey: keys.orgSpendingPrivKey,
+            blinding:   bigintToField(output0Blinding), // bytes — saveNote normalizes to hex
+            amount:     amountStroops,
+            leafIndex:  myLeafIndex,
+            ledger:     0,
+            owner:      adminAddress,
+        });
+    } catch (saveErr) {
+        // Don't fail the deposit — the on-chain tx already succeeded and the
+        // enclave_note_tags row is written. But warn loudly so the agent-spend
+        // pipeline doesn't silently fall back to an empty notes export.
+        console.warn('[depositForOrg] saveNote(user_notes) failed — agent SDK will not see this note until manually seeded:', saveErr);
+        onStatus?.(`WARN: private-note cache save failed: ${saveErr.message ?? saveErr}`);
+    }
 
     onStatus?.(`Deposit complete: ${result.txHash}`);
     return {

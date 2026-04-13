@@ -22,6 +22,7 @@ import { deriveOrgKeysFromFreighter, getCachedOrgKeys, setCachedOrgKeys } from '
 import { getOrgByAdmin, listAgents } from './registry.js';
 import { triggerBundleDownload } from './bundle.js';
 import { downloadAgentPackageZip, downloadAgentPackageMarkdown } from './agent-package.js';
+import { exportEnclaveNotes } from './notes-export.js';
 import { loadDeployedContracts, readPoolState, readASPMembershipState, readASPNonMembershipState, readSacBalance } from '../stellar.js';
 import { StateManager } from '../state/index.js';
 import { renderDashboard } from './dashboard.js';
@@ -335,12 +336,34 @@ function refreshExportPkgButtons() {
     if (els.exportPkgMdBtn)  els.exportPkgMdBtn.disabled  = !enabled;
 }
 
+/**
+ * Build the notes blob the agent SDK consumes. Uses the enclave-flavored
+ * exporter that joins user_notes (private fields) + enclave_note_tags
+ * (nullifier/orgId cross-ref) + fresh pool/ASP merkle proofs.
+ */
+async function buildEnclaveNotesBlob() {
+    const keys = getCachedOrgKeys(state.wallet.address);
+    if (!keys?.orgSpendingPubKey) {
+        throw new Error('Org keys not in session cache — reconnect Freighter to rebuild.');
+    }
+    if (!state.activeOrg) {
+        throw new Error('No active org — create or load one first.');
+    }
+    return exportEnclaveNotes({
+        ownerAddress:       state.wallet.address,
+        orgId:              state.activeOrg.orgId,
+        orgSpendingPubKey:  keys.orgSpendingPubKey,
+        aspLeafIndex:       Number(state.activeOrg.aspLeafIndex ?? 0),
+        stateManager:       StateManager,
+    });
+}
+
 async function exportAgentPackage(format) {
     if (!state.lastAgentBundle) {
         return showToast('Enroll an agent first — packages are per-agent.', 'error');
     }
     try {
-        const notesBlob = await StateManager.exportNotes();
+        const notesBlob = await buildEnclaveNotesBlob();
         const args = {
             bundle: state.lastAgentBundle,
             notesBlob,
@@ -571,7 +594,7 @@ async function handleEnrollSubmit() {
 
         // Auto-download the ZIP package on enrollment — the most useful default.
         try {
-            const notesBlob = await StateManager.exportNotes();
+            const notesBlob = await buildEnclaveNotesBlob();
             await downloadAgentPackageZip({
                 bundle,
                 notesBlob,

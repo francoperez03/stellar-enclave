@@ -112,7 +112,21 @@ relative to the folder; no env-var setup required unless you want to override.
  */
 async function buildPayload({ bundle, notesBlob, agentName, facilitatorUrl, demoUrl }) {
     const bundleText = JSON.stringify(bundle, null, 2);
-    const notesText = notesBlob ? await notesBlob.text() : JSON.stringify({ version: 1, notes: [] }, null, 2);
+    let notesText;
+    if (notesBlob) {
+        notesText = await notesBlob.text();
+        // Sanity check — if the export returned zero notes, warn loudly so the
+        // downstream run.sh doesn't silently fall into `no_funds`.
+        try {
+            const parsed = JSON.parse(notesText);
+            const arr = Array.isArray(parsed) ? parsed : parsed.notes;
+            if (!Array.isArray(arr) || arr.length === 0) {
+                console.warn('[agent-package] notes export returned 0 notes — the agent will hit no_funds');
+            }
+        } catch { /* non-fatal display quirk */ }
+    } else {
+        notesText = JSON.stringify({ version: 1, notes: [] }, null, 2);
+    }
     const runScript = generateRunScript({ facilitatorUrl, demoUrl });
     const readme = generateReadme({ orgId: bundle.orgId, agentName, facilitatorUrl, demoUrl });
     const config = `FACILITATOR_URL=${facilitatorUrl}\nDEMO_URL=${demoUrl}\nORG_ID=${bundle.orgId}\nAGENT_NAME=${agentName}\n`;
