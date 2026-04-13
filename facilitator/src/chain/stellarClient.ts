@@ -103,8 +103,16 @@ export function createStellarClient(config: StellarClientConfig): StellarClient 
       if (!retval) {
         throw new Error("pool.get_root sim returned no retval");
       }
-      const bytes = scValToNative(retval) as Uint8Array;
-      return Buffer.from(bytes).toString("hex");
+      const native = scValToNative(retval);
+      if (typeof native === "bigint") {
+        return native.toString(16).padStart(64, "0");
+      }
+      if (native instanceof Uint8Array) {
+        return Buffer.from(native).toString("hex").padStart(64, "0");
+      }
+      throw new Error(
+        `pool.get_root returned unexpected type: ${typeof native}`,
+      );
     },
   };
 
