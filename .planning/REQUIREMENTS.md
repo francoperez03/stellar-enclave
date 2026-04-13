@@ -75,8 +75,8 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 
 ### Hackathon Deliverables
 
-- [ ] **DEMO-01**: A public GitHub repository (fork of `NethermindEth/stellar-private-payments`) exists with a README that explains the product, the shielded-ASP-with-off-chain-policy architecture, upstream credit, license obligations, and a quickstart
-- [ ] **DEMO-02**: A ≤3-minute video demo shows: (a) three orgs coexisting in one pool, (b) an agent paying an x402 endpoint via the facilitator, (c) Stellar Expert showing the on-chain USDC settlement, (d) one Enclave Gate-gated endpoint refusing a non-member agent
+- [x] **DEMO-01**: A public GitHub repository (fork of `NethermindEth/stellar-private-payments`) exists with a README that explains the product, the shielded-ASP-with-off-chain-policy architecture, upstream credit, license obligations, and a quickstart
+- [x] **DEMO-02**: A ≤3-minute video demo shows: (a) three orgs coexisting in one pool, (b) an agent paying an x402 endpoint via the facilitator, (c) Stellar Expert showing the on-chain USDC settlement, (d) one Enclave Gate-gated endpoint refusing a non-member agent
 - [ ] **DEMO-03**: A working testnet deployment is reachable at submission time: the facilitator, the demo endpoints, and the shielded pool all respond to `scripts/preflight.sh` with zero errors
 - [ ] **DEMO-04**: A submission writeup exists on DoraHacks linking the repo, the video, the testnet contract addresses, and the README
 - [ ] **DEMO-05**: Demo rehearsal recorded on day 5 (2026-04-15) as a backup; final recording on day 6 (2026-04-16); submission uploaded no later than 2026-04-17
@@ -196,8 +196,8 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | DASH-01 | Phase 5 | Complete |
 | DASH-02 | Phase 5 | Complete |
 | DASH-03 | Phase 5 | Complete |
-| DEMO-01 | Phase 6 | Pending |
-| DEMO-02 | Phase 6 | Pending |
+| DEMO-01 | Phase 6 | Complete |
+| DEMO-02 | Phase 6 | Complete |
 | DEMO-03 | Phase 6 | Pending |
 | DEMO-04 | Phase 6 | Pending |
 | DEMO-05 | Phase 6 | Pending |

@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 06-demo-recording-submission
 current_plan: Franco-scope pending (rehearsal, final, YouTube, DoraHacks)
 status: completed
-stopped_at: Completed 07-02-lenis-provider-layout-PLAN.md
-last_updated: "2026-04-13T11:31:38.700Z"
+stopped_at: Completed 07-04-problem-how-it-works-PLAN.md
+last_updated: "2026-04-13T11:37:50.366Z"
 progress:
   total_phases: 9
   completed_phases: 8
   total_plans: 43
-  completed_plans: 38
+  completed_plans: 40
 ---
 
 # Session State
@@ -80,6 +80,8 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 | Phase 05-dashboard-ops-hardening P07 | ~4 min | 1 executed + 3 deferred tasks | 2 files |
 | 07-marketing-landing-page | 01 | 4 min | 2 | 10 | 2026-04-13 |
 | Phase 07-marketing-landing-page P02 | 8min | 2 tasks | 8 files |
+| Phase 07-marketing-landing-page P03 | 2min | 2 tasks | 6 files |
+| Phase 07-marketing-landing-page P04 | 3min | 2 tasks | 4 files |
 
 ## Decisions
 
@@ -191,6 +193,11 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 - [Phase 07-02]: LenisProvider is outermost wrapper, MotionProvider is inner — ensures Lenis RAF loop starts before Framer Motion scroll hooks fire
 - [Phase 07-02]: CONSOLE_URL fallback is /enclave.html (same-origin) — works for local dev and same-Vercel-project deploys without requiring an external URL
 - [Phase 07-02]: HAS_VIDEO boolean derived from YOUTUBE_VIDEO_ID.length — section plans use it to conditionally show/hide the Watch demo CTA
+- [Phase 07]: Slogan rendered at full opacity on load (not faded-in) to preserve SEO and reduced-motion accessibility; parallax orbs carry the atmospheric feel
+- [Phase 07]: BtnPrimary is server component (no use client); BtnGhost is client component to support onClick modal triggers
+- [Phase 07]: ProblemSection kept as pure RSC (no motion) — short editorial copy doesn't need client bundle cost
+- [Phase 07]: DiagramSvg uses hardcoded hex values (#D4A017 etc) — Tailwind v4 CSS vars don't resolve inside SVG attribute values
+- [Phase 07]: pathLength used for SVG arrow animation (not stroke-dashoffset math) — idiomatic Framer Motion 11 pattern
 
 ## Blockers
 
@@ -210,8 +217,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-13T11:31:38.697Z
-**Stopped at:** Completed 07-02-lenis-provider-layout-PLAN.md
+**Last session:** 2026-04-13T11:37:50.363Z
+**Stopped at:** Completed 07-04-problem-how-it-works-PLAN.md
 **Resume file:** None
 **Next action:** Franco — 2026-04-15 AM run §1 (Day 5 rehearsal). Then §3 (Day 6 final), §4 (YouTube upload + `./scripts/substitute-video-url.sh`), §5-7 on 2026-04-17 (preflight + claim-hygiene + DoraHacks publish + `./scripts/substitute-dorahacks-url.sh`).
 
