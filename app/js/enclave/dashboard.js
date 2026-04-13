@@ -111,8 +111,13 @@ export async function loadDashboardData({ orgId, facilitatorUrl, fetchFn = globa
 /**
  * Render the three dashboard tables. Idempotent: clears tbodies first.
  *
+ * Pass `orgId` directly (derived from the connected wallet's G-address) — this
+ * is the auto-load path used by the Enclave UI after Freighter connect.
+ * The legacy `adminPrivKeyHex` path is kept for tests; real UI doesn't use it.
+ *
  * @param {Object} params
- * @param {string} params.adminPrivKeyHex
+ * @param {string} [params.orgId]           Preferred. Already-resolved orgId.
+ * @param {string} [params.adminPrivKeyHex] Legacy. Derives orgId from a S... secret.
  * @param {string} params.facilitatorUrl
  * @param {HTMLElement} params.balanceTbody
  * @param {HTMLElement} params.agentsTbody
@@ -121,7 +126,7 @@ export async function loadDashboardData({ orgId, facilitatorUrl, fetchFn = globa
  * @param {(msg: string) => void} [params.onStatus]
  */
 export async function renderDashboard({
-    adminPrivKeyHex, facilitatorUrl,
+    orgId: orgIdArg, adminPrivKeyHex, facilitatorUrl,
     balanceTbody, agentsTbody, historyTbody, errorEl, onStatus,
 }) {
     // Clear previous render.
@@ -131,17 +136,19 @@ export async function renderDashboard({
     errorEl.hidden = true;
     errorEl.textContent = '';
 
-    let orgId;
-    try {
-        orgId = await deriveOrgIdFromPrivKey(adminPrivKeyHex);
-    } catch (e) {
-        errorEl.textContent = `Could not parse admin key: ${e.message ?? e}`;
-        errorEl.hidden = false;
-        return;
+    let orgId = orgIdArg ?? null;
+    if (!orgId && adminPrivKeyHex !== undefined) {
+        try {
+            orgId = await deriveOrgIdFromPrivKey(adminPrivKeyHex);
+        } catch (e) {
+            errorEl.textContent = `Could not parse admin key: ${e.message ?? e}`;
+            errorEl.hidden = false;
+            return;
+        }
     }
 
     if (!orgId) {
-        errorEl.textContent = 'No org found for this admin key.';
+        errorEl.textContent = 'No org found for the connected wallet.';
         errorEl.hidden = false;
         return;
     }

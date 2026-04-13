@@ -70,10 +70,7 @@ const els = {
     toastContainer:       document.getElementById('toast-container'),
     tplToast:             document.getElementById('tpl-toast'),
     tplAgentRow:          document.getElementById('tpl-agent-row'),
-    // Dashboard (Plan 05-06)
-    dashboardPrivkeyInput:     document.getElementById('dashboard-privkey-input'),
-    dashboardFacilitatorInput: document.getElementById('dashboard-facilitator-url-input'),
-    dashboardLoginBtn:         document.getElementById('dashboard-login-btn'),
+    // Dashboard (Plan 05-06 — auto-load from connected Freighter address)
     dashboardErrorEl:          document.getElementById('dashboard-error'),
     dashboardBalanceTbody:     document.querySelector('#dashboard-balance-table tbody'),
     dashboardAgentsTbody:      document.querySelector('#dashboard-agents-table tbody'),
@@ -296,6 +293,36 @@ async function renderForCurrentAccount() {
 
             els.agentsList.appendChild(row);
         }
+    }
+
+    await autoLoadDashboard(org.orgId);
+}
+
+/**
+ * Auto-load the dashboard for the connected wallet's org.
+ *
+ * Pulls the facilitator URL from window.ENCLAVE_CONFIG (Trunk-injected at build
+ * time from FACILITATOR_URL env var, default http://localhost:4021). No user
+ * input required — the orgId is already resolved from the connected G-address.
+ *
+ * @param {string} orgId
+ */
+async function autoLoadDashboard(orgId) {
+    const facilitatorUrl =
+        (typeof window !== 'undefined' && window.ENCLAVE_CONFIG?.facilitatorUrl) ||
+        'http://localhost:4021';
+    try {
+        await renderDashboard({
+            orgId,
+            facilitatorUrl,
+            balanceTbody:  els.dashboardBalanceTbody,
+            agentsTbody:   els.dashboardAgentsTbody,
+            historyTbody:  els.dashboardHistoryTbody,
+            errorEl:       els.dashboardErrorEl,
+            onStatus:      logActivity,
+        });
+    } catch (e) {
+        logActivity(`Dashboard load failed: ${e.message ?? e}`);
     }
 }
 
@@ -557,28 +584,6 @@ async function init() {
     // Submit on Enter inside agent name input
     els.enrollNameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleEnrollSubmit();
-    });
-
-    // Dashboard login button (Plan 05-06)
-    els.dashboardLoginBtn?.addEventListener('click', async () => {
-        const privkey = els.dashboardPrivkeyInput.value;
-        const facilitatorUrl = els.dashboardFacilitatorInput.value || 'http://localhost:4021';
-        els.dashboardLoginBtn.disabled = true;
-        try {
-            await renderDashboard({
-                adminPrivKeyHex: privkey,
-                facilitatorUrl,
-                balanceTbody:  els.dashboardBalanceTbody,
-                agentsTbody:   els.dashboardAgentsTbody,
-                historyTbody:  els.dashboardHistoryTbody,
-                errorEl:       els.dashboardErrorEl,
-                onStatus:      logActivity,
-            });
-        } finally {
-            els.dashboardLoginBtn.disabled = false;
-            // Deliberate: do NOT clear the input — owner may re-click to refresh without retyping.
-            // Do NOT persist the input value (no sessionStorage / localStorage write).
-        }
     });
 
     wireCopyButtons();
