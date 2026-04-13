@@ -192,6 +192,93 @@
       <pre id="activity-log" class="font-mono text-xs text-dark-400 whitespace-pre-wrap"></pre>
     </section>
 
+    <!-- Region 7: Dashboard (always visible — paste-key login, no Freighter required) -->
+    <section id="dashboard-section" class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="dashboard-heading">
+      <h2 id="dashboard-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Dashboard</h2>
+      <p class="mt-2 text-xs text-dark-400">Paste your admin private key to view treasury balance, enrolled agents, and spend history. Key is never stored — local-only, re-enter on reload.</p>
+
+      <div class="mt-4 flex flex-col gap-3">
+        <!-- Privkey input + facilitator URL -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="flex flex-col gap-1 flex-1">
+            <label for="dashboard-privkey-input" class="text-[10px] uppercase tracking-wide text-dark-400">Admin private key</label>
+            <input
+              id="dashboard-privkey-input"
+              type="password"
+              autocomplete="off"
+              placeholder="Paste admin S... secret (or 64-char hex seed)"
+              class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm font-mono text-dark-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+            />
+          </div>
+          <div class="flex flex-col gap-1 sm:w-64">
+            <label for="dashboard-facilitator-url-input" class="text-[10px] uppercase tracking-wide text-dark-400">Facilitator URL</label>
+            <input
+              id="dashboard-facilitator-url-input"
+              type="url"
+              value="http://localhost:4021"
+              class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm font-mono text-dark-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            id="dashboard-login-btn"
+            type="button"
+            class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+          >Load Dashboard</button>
+        </div>
+
+        <!-- Error banner -->
+        <div id="dashboard-error" hidden class="bg-rose-500/10 border border-rose-500/40 px-3 py-2 rounded-lg text-xs text-rose-300"></div>
+      </div>
+
+      <!-- Treasury balance table -->
+      <div class="mt-6">
+        <h3 class="text-[10px] uppercase tracking-wide text-dark-400 mb-2">Balance</h3>
+        <table id="dashboard-balance-table" class="w-full text-xs font-mono text-dark-200 border-collapse">
+          <thead>
+            <tr class="text-[10px] uppercase tracking-wide text-dark-500 border-b border-dark-700">
+              <th class="text-left py-1 pr-4">Metric</th>
+              <th class="text-left py-1">Value</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Agents table -->
+      <div class="mt-6">
+        <h3 class="text-[10px] uppercase tracking-wide text-dark-400 mb-2">Agents</h3>
+        <table id="dashboard-agents-table" class="w-full text-xs font-mono text-dark-200 border-collapse">
+          <thead>
+            <tr class="text-[10px] uppercase tracking-wide text-dark-500 border-b border-dark-700">
+              <th class="text-left py-1 pr-4">Agent</th>
+              <th class="text-left py-1 pr-4">Auth PubKey</th>
+              <th class="text-left py-1">Enrolled</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Spend history table -->
+      <div class="mt-6">
+        <h3 class="text-[10px] uppercase tracking-wide text-dark-400 mb-2">Spend History</h3>
+        <table id="dashboard-history-table" class="w-full text-xs font-mono text-dark-200 border-collapse">
+          <thead>
+            <tr class="text-[10px] uppercase tracking-wide text-dark-500 border-b border-dark-700">
+              <th class="text-left py-1 pr-4">Time</th>
+              <th class="text-left py-1 pr-4">Recipient</th>
+              <th class="text-left py-1 pr-4">Amount</th>
+              <th class="text-left py-1">Tx Hash</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 </div>
 

@@ -23,6 +23,7 @@ import { getOrgByAdmin, listAgents } from './registry.js';
 import { triggerBundleDownload } from './bundle.js';
 import { loadDeployedContracts, readPoolState, readASPMembershipState, readASPNonMembershipState } from '../stellar.js';
 import { StateManager } from '../state/index.js';
+import { renderDashboard } from './dashboard.js';
 
 // ---------------------------------------------------------------------------
 // Page state
@@ -69,6 +70,14 @@ const els = {
     toastContainer:       document.getElementById('toast-container'),
     tplToast:             document.getElementById('tpl-toast'),
     tplAgentRow:          document.getElementById('tpl-agent-row'),
+    // Dashboard (Plan 05-06)
+    dashboardPrivkeyInput:     document.getElementById('dashboard-privkey-input'),
+    dashboardFacilitatorInput: document.getElementById('dashboard-facilitator-url-input'),
+    dashboardLoginBtn:         document.getElementById('dashboard-login-btn'),
+    dashboardErrorEl:          document.getElementById('dashboard-error'),
+    dashboardBalanceTbody:     document.querySelector('#dashboard-balance-table tbody'),
+    dashboardAgentsTbody:      document.querySelector('#dashboard-agents-table tbody'),
+    dashboardHistoryTbody:     document.querySelector('#dashboard-history-table tbody'),
 };
 
 // ---------------------------------------------------------------------------
@@ -548,6 +557,28 @@ async function init() {
     // Submit on Enter inside agent name input
     els.enrollNameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleEnrollSubmit();
+    });
+
+    // Dashboard login button (Plan 05-06)
+    els.dashboardLoginBtn?.addEventListener('click', async () => {
+        const privkey = els.dashboardPrivkeyInput.value;
+        const facilitatorUrl = els.dashboardFacilitatorInput.value || 'http://localhost:4021';
+        els.dashboardLoginBtn.disabled = true;
+        try {
+            await renderDashboard({
+                adminPrivKeyHex: privkey,
+                facilitatorUrl,
+                balanceTbody:  els.dashboardBalanceTbody,
+                agentsTbody:   els.dashboardAgentsTbody,
+                historyTbody:  els.dashboardHistoryTbody,
+                errorEl:       els.dashboardErrorEl,
+                onStatus:      logActivity,
+            });
+        } finally {
+            els.dashboardLoginBtn.disabled = false;
+            // Deliberate: do NOT clear the input — owner may re-click to refresh without retyping.
+            // Do NOT persist the input value (no sessionStorage / localStorage write).
+        }
     });
 
     wireCopyButtons();
