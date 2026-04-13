@@ -75,7 +75,7 @@ afterAll(async () => {
 // ---------------------------------------------------------------------------
 describe('deriveOrgIdFromPrivKey', () => {
     test('returns the matching orgId for a known admin S... secret', async () => {
-        const secret = 'SCZANGBA5IIMU5A4ZFJNFXOZQBHKQFPPHC4TL2I12H4H23FP5GNXZSC';
+        const secret = 'SCZANGBA5IIMU5A4ZFJNFXOZQBHKQFPPHC4TL2I12H4H23FP5GNXZSCX';
         // Derive what the mock Keypair will return
         const kp = Keypair.fromSecret(secret);
         const adminAddress = kp.publicKey();
@@ -97,7 +97,7 @@ describe('deriveOrgIdFromPrivKey', () => {
     // Test 2: returns null for unknown admin (DASH-02 check)
     test('returns null for an unknown admin (DASH-02 isolation)', async () => {
         // DB has no orgs for this secret
-        const secret = 'SBRK4QCNLXFEWQ2AM5XFKOCLLZP7OIZQRQJMOMTPQB6ZJDLYSDOKCJB';
+        const secret = 'SBRK4QCNLXFEWQ2AM5XFKOCLLZP7OIZQRQJMOMTPQB6ZJDLYSDOKC1BX';
         const result = await deriveOrgIdFromPrivKey(secret);
         expect(result).toBeNull();
     });
