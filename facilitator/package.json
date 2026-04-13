@@ -13,6 +13,8 @@
     "build": "tsup",
     "bootstrap": "tsx src/cli/bootstrap.ts",
     "dev": "tsx watch src/index.ts",
+    "prestart": "npm run build",
+    "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --project unit --project integration",
     "test:unit": "vitest run --project unit",
