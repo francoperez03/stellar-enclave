@@ -34,11 +34,24 @@ export async function loadNotes(notesPath: string): Promise<EnclaveNote[]> {
   const parsed = JSON.parse(raw);
   // Accept either a bare array or the browser's wrapped export shape
   // { version, exportedAt, notes: [...] } produced by state.exportNotes().
-  if (Array.isArray(parsed)) return parsed as EnclaveNote[];
-  if (parsed && Array.isArray(parsed.notes)) return parsed.notes as EnclaveNote[];
-  throw new Error(
-    `notes file at ${notesPath} must be an array or { notes: [...] }; got ${typeof parsed}`,
-  );
+  let rows: unknown[];
+  if (Array.isArray(parsed)) rows = parsed;
+  else if (parsed && Array.isArray(parsed.notes)) rows = parsed.notes;
+  else {
+    throw new Error(
+      `notes file at ${notesPath} must be an array or { notes: [...] }; got ${typeof parsed}`,
+    );
+  }
+  // EnclaveNote.amount is typed as bigint but JSON serializes bigint via a
+  // to-string replacer upstream (browser side). Coerce back so the agent's
+  // arithmetic (note.amount - payAmount, etc.) doesn't mix BigInt with string.
+  return rows.map((r) => {
+    const n = r as EnclaveNote & { amount: unknown };
+    if (typeof n.amount !== 'bigint') {
+      n.amount = BigInt(String(n.amount));
+    }
+    return n as EnclaveNote;
+  });
 }
 
 export async function loadConfig(): Promise<AgentConfig> {
