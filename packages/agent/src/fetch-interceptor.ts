@@ -56,7 +56,13 @@ interface PaymentRequirements {
 }
 
 function parsePaymentRequirements(body: unknown): PaymentRequirements {
-  const pr = body as Record<string, unknown>;
+  // x402 spec: 402 body is { x402Version, error, accepts: [paymentRequirements] }.
+  // Legacy / some servers send the fields flat on the top-level object; support both.
+  const obj = body as Record<string, unknown>;
+  const accepts = obj['accepts'];
+  const pr = (Array.isArray(accepts) && accepts.length > 0
+    ? (accepts[0] as Record<string, unknown>)
+    : obj);
   if (!pr['payTo'] || !pr['maxAmountRequired']) {
     throw new Error('Invalid x402 paymentRequirements: missing payTo or maxAmountRequired');
   }
