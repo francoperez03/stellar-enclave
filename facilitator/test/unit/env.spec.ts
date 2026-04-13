@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdirSync, rmSync, realpathSync } from "node:fs";
+import { resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { Env } from "../../src/config/env.js";
 
 const REQUIRED: Record<string, string> = {
@@ -88,5 +91,44 @@ describe("Env", () => {
     delete process.env.STELLAR_RPC_URL;
     // Next access reparses — expect throw.
     expect(() => Env.facilitatorMode).toThrow(/missing required env var/);
+  });
+
+  describe("path resolution against repo root", () => {
+    let fakeRoot: string;
+    let origCwd: string;
+
+    beforeEach(() => {
+      fakeRoot = resolve(tmpdir(), `enclave-test-root-${process.pid}-${Date.now()}`);
+      mkdirSync(resolve(fakeRoot, ".git"), { recursive: true });
+      origCwd = process.cwd();
+      // Switch cwd into a sub-directory of fakeRoot to simulate npm -w workspace run
+      const workspaceDir = resolve(fakeRoot, "facilitator");
+      mkdirSync(workspaceDir, { recursive: true });
+      process.chdir(workspaceDir);
+    });
+
+    afterEach(() => {
+      process.chdir(origCwd);
+      rmSync(fakeRoot, { recursive: true, force: true });
+      Env.reset();
+    });
+
+    it("resolves relative FACILITATOR_KEY_PATH against repo root, not process.cwd", () => {
+      setAll({ FACILITATOR_KEY_PATH: "./some/key" });
+      Env.validate();
+      // Use realpathSync on fakeRoot to handle macOS /private symlink
+      const realRoot = realpathSync(fakeRoot);
+      const expected = resolve(realRoot, "./some/key");
+      expect(Env.keyPath).toBe(expected);
+      // Must NOT equal the workspace-relative path
+      expect(Env.keyPath).not.toBe(resolve(realRoot, "facilitator", "./some/key"));
+    });
+
+    it("leaves absolute FACILITATOR_KEY_PATH unchanged", () => {
+      const absPath = "/absolute/path/to/admin.key";
+      setAll({ FACILITATOR_KEY_PATH: absPath });
+      Env.validate();
+      expect(Env.keyPath).toBe(absPath);
+    });
   });
 });

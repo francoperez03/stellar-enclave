@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { Keypair } from "@stellar/stellar-sdk";
+import { resolveRepoRoot } from "../config/paths.js";
 
 export interface BootstrapOptions {
   keyPath?: string;
@@ -23,17 +24,6 @@ export interface BootstrapResult {
 const DEFAULT_KEY_PATH = "wallets/facilitator/admin.key";
 const DEFAULT_FRIENDBOT = "https://friendbot.stellar.org";
 const DEFAULT_HORIZON = "https://horizon-testnet.stellar.org";
-
-function resolveRepoRoot(start: string): string {
-  let dir = resolve(start);
-  while (dir !== "/") {
-    if (existsSync(resolve(dir, "pnpm-workspace.yaml")) || existsSync(resolve(dir, ".git"))) {
-      return dir;
-    }
-    dir = dirname(dir);
-  }
-  throw new Error("could not locate repository root (no pnpm-workspace.yaml or .git found)");
-}
 
 function ensureInsideRepo(repoRoot: string, target: string): void {
   const resolved = resolve(target);

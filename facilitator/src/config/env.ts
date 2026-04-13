@@ -8,6 +8,7 @@
  * - Typed getters force callers through a single validation surface.
  * - Matches the pattern in pocs/x402-stellar/examples/facilitator/src/config/env.ts.
  */
+import { resolvePathFromRepoRoot } from "./paths.js";
 export type FacilitatorMode = "on_chain" | "mock";
 
 interface ParsedEnv {
@@ -87,13 +88,13 @@ function parse(): ParsedEnv {
     stellarNetworkPassphrase: readString("STELLAR_NETWORK_PASSPHRASE"),
     poolContractId: readString("POOL_CONTRACT_ID"),
     usdcContractId: readString("USDC_CONTRACT_ID"),
-    keyPath: readString("FACILITATOR_KEY_PATH"),
+    keyPath: resolvePathFromRepoRoot(readString("FACILITATOR_KEY_PATH")),
     minXlmStroops: readBigint("FACILITATOR_MIN_XLM_STROOPS", 50_000_000n),
     maxTransactionFeeStroops: readInt("FACILITATOR_MAX_TX_FEE_STROOPS", 10_000_000),
     cacheHydrateLedgers: readInt("FACILITATOR_HYDRATE_LEDGERS", 120_960),
-    circuitVkeyPath: readString("FACILITATOR_VKEY_PATH", "wallets/circuits/transact2.vkey.json"),
+    circuitVkeyPath: resolvePathFromRepoRoot(readString("FACILITATOR_VKEY_PATH", "wallets/circuits/transact2.vkey.json")),
     logLevel: readString("LOG_LEVEL", "info"),
-    settlementsPath: readString("FACILITATOR_SETTLEMENTS_PATH", "./data/settlements.jsonl"),
+    settlementsPath: resolvePathFromRepoRoot(readString("FACILITATOR_SETTLEMENTS_PATH", "./data/settlements.jsonl")),
   };
 }
 
