@@ -6,6 +6,7 @@ import { BtnPrimary } from "@/components/ui/BtnPrimary";
 import { BtnGhost } from "@/components/ui/BtnGhost";
 import { Pill } from "@/components/ui/Pill";
 import { VideoModal } from "@/components/ui/VideoModal";
+import { EnclaveShield3D } from "@/components/ui/EnclaveShield3D";
 import { CONSOLE_URL, HAS_VIDEO, YOUTUBE_VIDEO_ID } from "@/lib/constants";
 
 export function HeroSection() {
@@ -77,10 +78,12 @@ export function HeroSection() {
         />
       </motion.div>
 
+      <EnclaveShield3D className="absolute inset-0 z-0" />
+
       {/* Content — slogan + sub-line + dual CTA. */}
       <motion.div
         style={{ opacity: sloganOpacity, y: sloganY }}
-        className="relative z-10 flex flex-col items-center gap-10 text-center px-6 max-w-3xl"
+        className="relative z-10 flex flex-col items-center gap-14 text-center px-6 max-w-3xl"
       >
         <Pill dotColor="bg-gold-500" animated>
           <span className="text-xs tracking-[0.12em] uppercase">

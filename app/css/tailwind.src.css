@@ -36,9 +36,27 @@
   /* Fonts */
   --font-sans: "Outfit", ui-sans-serif, system-ui;
   --font-mono: "JetBrains Mono", monospace;
+  --font-headline: "DM Serif Display", ui-serif, Georgia, serif;
 
   /* Fix for the white border issue: Set default border color */
   --color-border: var(--color-dark-800);
+
+  /* Light theme palette (CFO console — x402-inspired) */
+  --color-cream: #f5f0e8;
+  --color-surface: #ffffff;
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f3f4f6;
+  --color-ink-200: #e5e7eb;
+  --color-ink-300: #d1d5db;
+  --color-ink-400: #9ca3af;
+  --color-ink-500: #6b7280;
+  --color-ink-700: #374151;
+  --color-ink-900: #1a1a1a;
+  --color-gold-300: #ecc46c;
+  --color-gold-400: #e0b43f;
+  --color-gold-500: #d4a017;
+  --color-gold-600: #b8890f;
+  --color-gold-700: #8b6914;
 }
 
 @layer utilities {
@@ -109,10 +127,236 @@
     .animate-slide-in {
         animation: slide-in 0.3s ease-out;
     }
+
+    /* shadcn-style micro-animations */
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    @keyframes scale-in {
+        from { opacity: 0; transform: scale(0.96); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    .animate-scale-in { animation: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    @keyframes glow-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.0); }
+        50%      { box-shadow: 0 0 0 6px rgba(212, 160, 23, 0.10); }
+    }
+    .animate-glow-pulse { animation: glow-pulse 2.4s ease-in-out infinite; }
+
+    /* Stagger helpers: pair with .animate-fade-up to cascade children */
+    .delay-75  { animation-delay: 75ms; }
+    .delay-150 { animation-delay: 150ms; }
+    .delay-225 { animation-delay: 225ms; }
+    .delay-300 { animation-delay: 300ms; }
 }
 
 @layer base {
   *, ::before, ::after {
     border-color: var(--color-border);
   }
+
+  /* Scoped light theme — only applies when body has .theme-light */
+  .theme-light,
+  .theme-light *, .theme-light ::before, .theme-light ::after {
+    border-color: var(--color-ink-200);
+  }
+
+  /* Re-paint dark-theme classes that JS injects into enclave.html, so they
+     read correctly on cream surfaces. JS at enclave/index.js:257,274,
+     and the toast/agent-row templates emit text-brand-* / text-dark-*
+     classes; these overrides keep contrast acceptable in the light theme
+     without touching JS. */
+  .theme-light .text-brand-200,
+  .theme-light .text-brand-300,
+  .theme-light .text-brand-400,
+  .theme-light .text-brand-500 { color: var(--color-gold-600); }
+
+  .theme-light .hover\:text-brand-300:hover,
+  .theme-light .hover\:text-brand-400:hover,
+  .theme-light .hover\:text-brand-500:hover { color: var(--color-gold-700); }
+
+  .theme-light .text-dark-50  { color: var(--color-ink-900); }
+  .theme-light .text-dark-100,
+  .theme-light .text-dark-200,
+  .theme-light .text-dark-300 { color: var(--color-ink-700); }
+  .theme-light .text-dark-400,
+  .theme-light .text-dark-500 { color: var(--color-ink-500); }
+
+  /* ---------------------------------------------------------------
+   * shadcn-inspired surface system
+   * Layered ambient background, refined card/button polish, and a
+   * subtle dotted grid that grounds the cream base. Page-scoped to
+   * .theme-light so dark pages stay untouched.
+   * ------------------------------------------------------------- */
+
+  /* Page background: cream + dotted grid + two blurred gold orbs.
+     Fixed-attached so the orbs feel ambient rather than scrolling. */
+  body.theme-light {
+    background-color: var(--color-cream);
+    background-image:
+      radial-gradient(circle at 12% 8%,  rgba(212, 160, 23, 0.10) 0%, transparent 38%),
+      radial-gradient(circle at 92% 96%, rgba(212, 160, 23, 0.07) 0%, transparent 42%),
+      radial-gradient(rgba(26, 26, 26, 0.045) 1px, transparent 1px);
+    background-size: auto, auto, 22px 22px;
+    background-attachment: fixed, fixed, fixed;
+    background-position: 0 0, 0 0, 0 0;
+  }
+
+  /* Smooth scroll feel */
+  .theme-light html, .theme-light body { scroll-behavior: smooth; }
+
+  /* Cards: soft shadow, hover lift + warmer border */
+  .theme-light .card-surface {
+    background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.88) 100%);
+    box-shadow: 0 1px 0 0 rgba(26, 26, 26, 0.02), 0 8px 20px -12px rgba(26, 26, 26, 0.10);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .theme-light .card-surface:hover {
+    box-shadow: 0 1px 0 0 rgba(26, 26, 26, 0.03), 0 14px 28px -14px rgba(26, 26, 26, 0.14);
+    border-color: var(--color-ink-300);
+  }
+  .theme-light .card-lift:hover { transform: translateY(-2px); }
+
+  /* Action card variant: dotted divider between header and body, gold
+     accent strip on hover */
+  .theme-light .action-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .theme-light .action-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-gold-500), var(--color-gold-300));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .theme-light .action-card:hover::before { opacity: 1; }
+
+  /* Refined primary button: subtle gradient, refined press feedback */
+  .theme-light .btn-primary {
+    background-image: linear-gradient(180deg, var(--color-gold-500) 0%, var(--color-gold-600) 100%);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 6px 14px -6px rgba(212, 160, 23, 0.55);
+    transition: transform 0.12s ease, box-shadow 0.18s ease, background-position 0.3s ease;
+    background-size: 100% 200%;
+    background-position: 0 0;
+  }
+  .theme-light .btn-primary:hover:not(:disabled) {
+    background-position: 0 100%;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 10px 22px -8px rgba(212, 160, 23, 0.60);
+  }
+  .theme-light .btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.10) inset, 0 4px 10px -4px rgba(212, 160, 23, 0.50);
+  }
+
+  /* Refined ghost / outline button */
+  .theme-light .btn-ghost {
+    background-color: var(--color-surface);
+    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease, transform 0.12s ease;
+  }
+  .theme-light .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-gold-500);
+    color: var(--color-ink-900);
+  }
+  .theme-light .btn-ghost:active:not(:disabled) { transform: translateY(1px); }
+
+  /* Hero stat tiles: refined number treatment + accent line on first tile */
+  .theme-light .stat-tile {
+    position: relative;
+    overflow: hidden;
+  }
+  .theme-light .stat-tile-accent::after {
+    content: "";
+    position: absolute;
+    left: 1.5rem;
+    bottom: 1rem;
+    width: 28px;
+    height: 2px;
+    background: var(--color-gold-500);
+    border-radius: 2px;
+  }
+  .theme-light .stat-value {
+    background: linear-gradient(180deg, var(--color-ink-900) 0%, #4a4a4a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+  }
+
+  /* Status pill (live, idle, etc.) */
+  .theme-light .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    background: var(--color-surface);
+    border: 1px solid var(--color-ink-200);
+    color: var(--color-ink-700);
+  }
+  .theme-light .pill-dot {
+    width: 6px; height: 6px; border-radius: 9999px; flex-shrink: 0;
+  }
+
+  /* Disclosure (details/summary) — smoother chevron + hover bg */
+  .theme-light details > summary {
+    transition: background-color 0.16s ease;
+  }
+  .theme-light details > summary:hover { background-color: rgba(245, 240, 232, 0.6); }
+  .theme-light details[open] > summary { border-bottom: 1px solid var(--color-ink-200); }
+
+  /* Modal: scale-in + refined backdrop */
+  .theme-light .modal-shell {
+    background-color: rgba(26, 26, 26, 0.45);
+    backdrop-filter: blur(8px) saturate(120%);
+  }
+  .theme-light .modal-card {
+    box-shadow: 0 25px 50px -12px rgba(26, 26, 26, 0.35), 0 0 0 1px rgba(26, 26, 26, 0.04);
+  }
+
+  /* Refined focus ring (more shadcn-y) */
+  .theme-light :focus-visible {
+    outline: none;
+  }
+  .theme-light .focus-ring:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-cream), 0 0 0 4px var(--color-gold-500);
+  }
+
+  /* Refined input */
+  .theme-light .input-field {
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+  .theme-light .input-field:focus {
+    box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.18);
+  }
+
+  /* Section divider with gradient */
+  .theme-light .divider-gradient {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--color-ink-200) 50%, transparent 100%);
+  }
+
+  /* Small "kbd" badge for keyboard hints */
+  .theme-light kbd.kbd {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-ink-200);
+    border-bottom-width: 2px;
+    color: var(--color-ink-700);
+    padding: 1px 5px;
+    border-radius: 4px;
+    line-height: 1;
+  }
 }
+

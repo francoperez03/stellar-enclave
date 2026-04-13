@@ -286,6 +286,9 @@
       <div id="agents-list" class="flex flex-col gap-2">
         <!-- populated by index.js from tpl-agent-row, or empty state -->
       </div>
+      <nav id="agents-pager" class="flex items-center justify-center gap-1.5" aria-label="Agents pagination">
+        <!-- populated by index.js when agents > 5, empty otherwise -->
+      </nav>
     </section>
 
     <!-- Dashboard wrapper (preserves dashboard-section + dashboard-error contract) -->
@@ -294,7 +297,7 @@
 
       <div id="dashboard-error" hidden class="bg-red-50 border border-red-200 px-3 py-2 rounded-md text-xs text-red-700"></div>
 
-      <details class="bg-surface border border-ink-200 rounded-lg group" open>
+      <details class="bg-surface border border-ink-200 rounded-lg group">
         <summary class="cursor-pointer list-none flex items-center justify-between px-4 py-3 text-sm font-medium text-ink-900">
           <span>Treasury balance</span>
           <svg class="w-4 h-4 text-ink-500 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>

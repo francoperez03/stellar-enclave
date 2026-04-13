@@ -78,6 +78,12 @@ test.describe("Enclave landing — layout & sections", () => {
     await expect(page.locator("text=Stellar Agentic Hackathon 2026").first()).toBeVisible();
   });
 
+  test("hero renders 3D Enclave shield centerpiece", async ({ page }) => {
+    const shield = page.locator("[data-enclave-shield-3d]");
+    await expect(shield).toHaveCount(1);
+    await expect(shield).toHaveAttribute("aria-hidden", "true");
+  });
+
   test("DEMO-02: Watch the demo button toggles when YOUTUBE_VIDEO_ID set (conditional)", async ({ page }) => {
     // If NEXT_PUBLIC_YOUTUBE_VIDEO_ID is empty (default for CI), the CTA is intentionally hidden.
     // Assert the hero page shows EITHER the CTA (if set) OR the fallback card in TryIt.

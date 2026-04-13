@@ -63,6 +63,7 @@ const els = {
     orgCreatedAtReadout:  document.getElementById('org-created-at-readout'),
     orgTxHashReadout:     document.getElementById('org-tx-hash-readout'),
     agentsList:           document.getElementById('agents-list'),
+    agentsPager:          document.getElementById('agents-pager'),
     depositAmountInput:   document.getElementById('deposit-amount-input'),
     depositBtn:           document.getElementById('deposit-btn'),
     depositBtnText:       document.getElementById('deposit-btn-text'),
@@ -208,6 +209,92 @@ async function loadDeployments() {
 // Render
 // ---------------------------------------------------------------------------
 
+const AGENTS_PAGE_SIZE = 5;
+let agentsPage = 0;
+let agentsLastOrgId = null;
+let agentsCache = [];
+
+function renderAgentsPage() {
+    const total = agentsCache.length;
+    const totalPages = Math.max(1, Math.ceil(total / AGENTS_PAGE_SIZE));
+
+    if (agentsPage >= totalPages) agentsPage = totalPages - 1;
+    if (agentsPage < 0) agentsPage = 0;
+
+    els.agentsList.innerHTML = '';
+
+    if (total === 0) {
+        els.agentsList.innerHTML =
+            '<div class="flex flex-col gap-3">' +
+            '<p class="text-xs text-dark-400">No agents enrolled yet. Agents receive a one-time JSON bundle with your org\'s spending key. Share the bundle out of band.</p>' +
+            '</div>';
+        els.agentsPager.innerHTML = '';
+        return;
+    }
+
+    const start = agentsPage * AGENTS_PAGE_SIZE;
+    const slice = agentsCache.slice(start, start + AGENTS_PAGE_SIZE);
+
+    for (const a of slice) {
+        const row = els.tplAgentRow.content.cloneNode(true);
+        row.querySelector('[data-agent-name]').textContent   = a.agentName;
+        row.querySelector('[data-agent-when]').textContent   = a.enrolledAt
+            ? new Date(a.enrolledAt).toLocaleString()
+            : '';
+        row.querySelector('[data-agent-pubkey]').textContent = shortAddress(a.authPubKey, 10, 8);
+
+        const copyBtn = row.querySelector('.copy-agent-key-btn');
+        const fullKey = a.authPubKey;
+        copyBtn?.addEventListener('click', () => {
+            navigator.clipboard.writeText(fullKey)
+                .then(() => showToast('Copied to clipboard.', 'success', 2000))
+                .catch(() => showToast('Could not copy.', 'error', 2000));
+        });
+
+        els.agentsList.appendChild(row);
+    }
+
+    renderAgentsPager(totalPages);
+}
+
+function renderAgentsPager(totalPages) {
+    els.agentsPager.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const baseClass = 'focus-ring inline-flex items-center justify-center text-xs font-medium rounded-md w-8 h-8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+    const inactiveClass = `${baseClass} bg-surface border border-ink-300 text-ink-700 hover:border-gold-500 hover:text-ink-900`;
+    const activeClass = `${baseClass} btn-primary text-white`;
+
+    const makeBtn = (inner, label, onClick, { active = false, disabled = false } = {}) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = active ? activeClass : inactiveClass;
+        btn.innerHTML = inner;
+        btn.setAttribute('aria-label', label);
+        if (active) btn.setAttribute('aria-current', 'page');
+        if (disabled) btn.disabled = true;
+        btn.addEventListener('click', onClick);
+        return btn;
+    };
+
+    const chevLeft  = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    const chevRight = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+    els.agentsPager.appendChild(makeBtn(chevLeft, 'Previous page', () => {
+        if (agentsPage > 0) { agentsPage--; renderAgentsPage(); }
+    }, { disabled: agentsPage === 0 }));
+
+    for (let i = 0; i < totalPages; i++) {
+        els.agentsPager.appendChild(makeBtn(String(i + 1), `Page ${i + 1}`, () => {
+            if (agentsPage !== i) { agentsPage = i; renderAgentsPage(); }
+        }, { active: i === agentsPage }));
+    }
+
+    els.agentsPager.appendChild(makeBtn(chevRight, 'Next page', () => {
+        if (agentsPage < totalPages - 1) { agentsPage++; renderAgentsPage(); }
+    }, { disabled: agentsPage === totalPages - 1 }));
+}
+
 /**
  * Re-render the org region for the currently connected account.
  * Shows org-bootstrap-card if no org exists, org-card if it does.
@@ -277,33 +364,12 @@ async function renderForCurrentAccount() {
         logActivity(`Agents list read failed: ${e.message}`);
     }
 
-    els.agentsList.innerHTML = '';
-    if (agents.length === 0) {
-        els.agentsList.innerHTML =
-            '<div class="flex flex-col gap-3">' +
-            '<p class="text-xs text-dark-400">No agents enrolled yet. Agents receive a one-time JSON bundle with your org\'s spending key. Share the bundle out of band.</p>' +
-            '</div>';
-    } else {
-        for (const a of agents) {
-            const row = els.tplAgentRow.content.cloneNode(true);
-            row.querySelector('[data-agent-name]').textContent   = a.agentName;
-            row.querySelector('[data-agent-when]').textContent   = a.enrolledAt
-                ? new Date(a.enrolledAt).toLocaleString()
-                : '';
-            row.querySelector('[data-agent-pubkey]').textContent = shortAddress(a.authPubKey, 10, 8);
-
-            // Wire copy button on the row
-            const copyBtn = row.querySelector('.copy-agent-key-btn');
-            const fullKey = a.authPubKey;
-            copyBtn?.addEventListener('click', () => {
-                navigator.clipboard.writeText(fullKey)
-                    .then(() => showToast('Copied to clipboard.', 'success', 2000))
-                    .catch(() => showToast('Could not copy.', 'error', 2000));
-            });
-
-            els.agentsList.appendChild(row);
-        }
+    if (agentsLastOrgId !== org.orgId) {
+        agentsPage = 0;
+        agentsLastOrgId = org.orgId;
     }
+    agentsCache = agents;
+    renderAgentsPage();
 
     await autoLoadDashboard(org.orgId);
 }
