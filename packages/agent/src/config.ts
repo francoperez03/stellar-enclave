@@ -31,7 +31,14 @@ export async function loadBundle(bundlePath: string): Promise<AgentBundle> {
 
 export async function loadNotes(notesPath: string): Promise<EnclaveNote[]> {
   const raw = await readFile(notesPath, 'utf-8');
-  return JSON.parse(raw) as EnclaveNote[];
+  const parsed = JSON.parse(raw);
+  // Accept either a bare array or the browser's wrapped export shape
+  // { version, exportedAt, notes: [...] } produced by state.exportNotes().
+  if (Array.isArray(parsed)) return parsed as EnclaveNote[];
+  if (parsed && Array.isArray(parsed.notes)) return parsed.notes as EnclaveNote[];
+  throw new Error(
+    `notes file at ${notesPath} must be an array or { notes: [...] }; got ${typeof parsed}`,
+  );
 }
 
 export async function loadConfig(): Promise<AgentConfig> {
