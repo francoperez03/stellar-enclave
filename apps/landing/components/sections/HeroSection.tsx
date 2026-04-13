@@ -91,6 +91,10 @@ export function HeroSection() {
           </span>
         </Pill>
 
+        <div className="text-xs md:text-sm tracking-[0.18em] uppercase text-ink-600 font-mono">
+          Enclave
+        </div>
+
         {/* SACRED SLOGAN — three-line stack. No edits. Source: DEMO-SCRIPT.md:118. */}
         <h1 className="font-headline text-ink-900 leading-[1.05] text-[clamp(3rem,8vw,5rem)]">
           <span className="block">Your agents.</span>
@@ -99,12 +103,12 @@ export function HeroSection() {
         </h1>
 
         <p className="text-ink-500 text-lg md:text-xl max-w-xl leading-relaxed">
-          Shielded organizations for autonomous agents on Stellar.
+          Enclave is the shielded organization layer for autonomous agents on Stellar.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 items-center">
           <BtnPrimary href={CONSOLE_URL} ariaLabel="Go to the Enclave Treasury console">
-            Go to App
+            Launch Enclave
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
