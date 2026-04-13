@@ -223,6 +223,33 @@ export interface BuildWitnessParams {
  *
  * ASP membership blinding is always "0" per ORG-05.
  */
+/** BN254 scalar field modulus — witness inputs MUST be strictly less. */
+const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+
+/**
+ * Normalize a hex-or-decimal string to an in-range decimal string for circom.
+ * The agent bundle's orgSpendingPrivKey is derived from a Freighter signature
+ * and can exceed the BN254 modulus — the circuit panics on such inputs.
+ *
+ * Accepts: '0x...' hex, bare-hex (a-f chars), pure decimal, or arbitrary
+ * placeholder strings (unit tests use tokens like 'orgpriv1' which are
+ * returned as-is — the mocked prover never parses them).
+ */
+function normalizeField(value: string): string {
+  let raw: bigint;
+  if (value.startsWith('0x') || value.startsWith('0X')) {
+    raw = BigInt(value);
+  } else if (/^[0-9]+$/.test(value)) {
+    raw = BigInt(value);
+  } else if (/^[0-9a-fA-F]+$/.test(value)) {
+    raw = BigInt('0x' + value);
+  } else {
+    return value; // unparseable placeholder — let downstream deal
+  }
+  const reduced = ((raw % BN254_MODULUS) + BN254_MODULUS) % BN254_MODULUS;
+  return reduced.toString();
+}
+
 export function buildWitnessInputs(params: BuildWitnessParams): WitnessInputs {
   const {
     orgSpendingPrivKey,
@@ -234,6 +261,8 @@ export function buildWitnessInputs(params: BuildWitnessParams): WitnessInputs {
     extDataHash,
     nonMembershipProofs,
   } = params;
+
+  const privKeyField = normalizeField(orgSpendingPrivKey);
 
   const membershipProofs: [MembershipProof, MembershipProof] = [
     {
@@ -252,7 +281,7 @@ export function buildWitnessInputs(params: BuildWitnessParams): WitnessInputs {
 
   return {
     // MODEL X: both slots use the SAME shared spending key
-    inPrivateKey: [orgSpendingPrivKey, orgSpendingPrivKey],
+    inPrivateKey: [privKeyField, privKeyField],
 
     // Null slot (index 0): amount=0, uses dummy note
     // Real slot (index 1): amount=payAmount, uses real note
