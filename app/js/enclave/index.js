@@ -21,7 +21,7 @@ import { enrollAgent } from './enroll.js';
 import { deriveOrgKeysFromFreighter, getCachedOrgKeys, setCachedOrgKeys } from './keys.js';
 import { getOrgByAdmin, listAgents } from './registry.js';
 import { triggerBundleDownload } from './bundle.js';
-import { loadDeployedContracts, readPoolState, readASPMembershipState, readASPNonMembershipState } from '../stellar.js';
+import { loadDeployedContracts, readPoolState, readASPMembershipState, readASPNonMembershipState, readSacBalance } from '../stellar.js';
 import { StateManager } from '../state/index.js';
 import { renderDashboard } from './dashboard.js';
 
@@ -397,6 +397,25 @@ async function handleDeposit() {
         return showToast('Enter a positive amount.', 'error');
     }
     const amountStroops = BigInt(Math.round(amt * 1e7));
+
+    // Pre-transaction USDC balance check — fail fast before witness/proof gen.
+    const usdcContractId = state.deployments?.usdc_token_sac;
+    if (!usdcContractId) {
+        return showToast('USDC contract not loaded — check deployments.json', 'error');
+    }
+    let balance;
+    try {
+        balance = await readSacBalance(usdcContractId, state.wallet.address);
+    } catch (e) {
+        logActivity(`Balance check failed: ${e.message ?? e}`);
+        return showToast(`Could not read USDC balance: ${e.message ?? e}`, 'error');
+    }
+    if (balance < amountStroops) {
+        const have = (Number(balance) / 1e7).toFixed(7);
+        const need = amt.toFixed(7);
+        logActivity(`Deposit blocked — wallet has ${have} USDC, deposit requires ${need}`);
+        return showToast(`Insufficient USDC: have ${have}, need ${need}`, 'error', 6000);
+    }
 
     els.depositBtn.disabled = true;
     els.depositBtnText.textContent = 'Depositing\u2026';

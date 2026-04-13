@@ -3,7 +3,7 @@
  * Specialized for Pool, ASP Membership, and ASP Non-Membership contracts
  * @see https://developers.stellar.org/docs/build/guides/dapps/frontend-guide
  */
-import { Horizon, rpc, Networks, Address, xdr, scValToNative as sdkScValToNative, contract, ScInt } from '@stellar/stellar-sdk';
+import { Horizon, rpc, Networks, Address, xdr, scValToNative as sdkScValToNative, contract, ScInt, Contract, TransactionBuilder, Account } from '@stellar/stellar-sdk';
 
 const SUPPORTED_NETWORK = 'testnet';
 
@@ -127,6 +127,41 @@ export function getHorizonServer() {
 export function getSorobanServer() {
     if (!sorobanServer) initializeNetwork();
     return sorobanServer;
+}
+
+/**
+ * Read a Stellar Asset Contract's `balance(addr)` via simulateTransaction.
+ * Works for any SAC (USDC, native XLM wrapper, etc). Returns bigint base units.
+ *
+ * @param {string} contractId      SAC contract C... address
+ * @param {string} accountAddress  Account G... address to query balance for
+ * @returns {Promise<bigint>}      Balance in base units
+ * @throws If simulation fails or returns no retval.
+ */
+export async function readSacBalance(contractId, accountAddress) {
+    const server = getSorobanServer();
+    const contractInstance = new Contract(contractId);
+    const dummySource = new Account(accountAddress, '0');
+    const tx = new TransactionBuilder(dummySource, {
+        fee: '100',
+        networkPassphrase: getNetwork().passphrase,
+    })
+        .addOperation(contractInstance.call('balance', Address.fromString(accountAddress).toScVal()))
+        .setTimeout(30)
+        .build();
+
+    const sim = await server.simulateTransaction(tx);
+    if (rpc.Api.isSimulationError(sim)) {
+        throw new Error(`SAC balance sim failed: ${sim.error}`);
+    }
+    const retval = sim.result?.retval;
+    if (!retval) {
+        throw new Error('SAC balance sim returned no retval');
+    }
+    const native = scValToNative(retval);
+    if (typeof native === 'bigint') return native;
+    if (typeof native === 'number') return BigInt(native);
+    throw new Error(`SAC balance returned unexpected type: ${typeof native}`);
 }
 
 /**

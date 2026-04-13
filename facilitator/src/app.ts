@@ -22,7 +22,14 @@ export function createApp(state: FacilitatorState, options: CreateAppOptions = {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: options.corsOrigins ?? "*" }));
+  // The cors package treats string "*" as the wildcard and an array as a
+  // strict origin allowlist. When the env parses "*" into ["*"], we must
+  // normalize back to the string so browsers get Access-Control-Allow-Origin: *.
+  const corsOrigin =
+    !options.corsOrigins || options.corsOrigins.includes("*")
+      ? "*"
+      : options.corsOrigins;
+  app.use(cors({ origin: corsOrigin }));
   app.use(express.json({ limit: "256kb" }));
   app.use(pinoHttp({ logger: state.logger }));
 
