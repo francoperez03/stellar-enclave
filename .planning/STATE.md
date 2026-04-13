@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
 current_plan: Not started
 status: planning
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-04-13T00:56:24.038Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-04-13T00:58:02.099Z"
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 32
-  completed_plans: 29
+  completed_plans: 30
 ---
 
 # Session State
@@ -70,6 +70,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 | Phase 05-dashboard-ops-hardening P02 | 12 min | 2 tasks | 5 files |
 | Phase 05-dashboard-ops-hardening P03 | 4 min | 1 tasks | 2 files |
 | Phase 05-dashboard-ops-hardening P01 | 3 min | 2 tasks | 13 files |
+| Phase 05-dashboard-ops-hardening P04 | 5 min | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -163,6 +164,8 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 05-03]: proofPayload extended with optional publicInputBytes to pass raw 352-byte PI from live path to capture block
 - [Phase 05-01]: SettlementsLog schema locked: {ts, nullifier, recipient, amount, txHash} — org-blind (no orgId). Verbatim decimal bigint string from proof.inputNullifiers[0] for nullifier format.
 - [Phase 05-01]: JSONL backing store at FACILITATOR_SETTLEMENTS_PATH (default ./data/settlements.jsonl). Append wrapped in try/catch — log is observability, not consensus; HTTP 200 never blocked by log write failure.
+- [Phase 05-04]: TTL check uses stellar ledger entry fetch contract-data --instance instead of stellar contract ttl (unavailable in installed CLI version); instance fetch returns liveUntilLedgerSeq + latestLedger in one call
+- [Phase 05-04]: Liveness check uses instance fetch (not get_root invoke) because verifier contract only exposes verify, not get_root — instance fetch works uniformly on all four contracts
 
 ## Blockers
 
@@ -181,8 +184,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-13T00:56:24.036Z
-**Stopped at:** Completed 05-01-PLAN.md
+**Last session:** 2026-04-13T00:58:02.096Z
+**Stopped at:** Completed 05-04-PLAN.md
 **Resume file:** None
 **Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).
 
