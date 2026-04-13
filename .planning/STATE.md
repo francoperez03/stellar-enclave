@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 06-demo-recording-submission
-current_plan: Franco-scope pending (rehearsal, final, YouTube, DoraHacks)
+current_phase: 07-marketing-landing-page
+current_plan: 07-07 complete
 status: completed
-stopped_at: Completed 07-06-try-it-footer-PLAN.md
-last_updated: "2026-04-13T11:39:58.984Z"
+stopped_at: Completed 07-07-deploy-validation-smoke-tests-PLAN.md
+last_updated: "2026-04-13T11:46:50.000Z"
 progress:
   total_phases: 9
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 43
-  completed_plans: 42
+  completed_plans: 43
 ---
 
 # Session State
@@ -23,10 +23,10 @@ See: .planning/PROJECT.md
 ## Position
 
 **Milestone:** v1.0 milestone
-**Current phase:** 06-demo-recording-submission
-**Current Plan:** Franco-scope pending (rehearsal, final, YouTube, DoraHacks)
-**Total Plans in Phase:** 4
-**Status:** Agent-scope complete 2026-04-12 — Franco executes 3 sessions per FRANCO-CHECKLIST.md
+**Current phase:** 07-marketing-landing-page
+**Current Plan:** 07-07 complete — Phase 7 agent-scope closed
+**Total Plans in Phase:** 7
+**Status:** Agent-scope complete 2026-04-13 — all 7 plans executed; Playwright 12/12 green; build exits 0
 
 ## Progress
 
@@ -38,9 +38,9 @@ Phase 03.1-agent-wire-format-fix: [██████████] 100% (1/1 pla
 Phase 04-enclave-gate-middleware-gated-endpoint: [██████████] 100% (2/2 plans) ✓
 Phase 05-dashboard-ops-hardening: [██████████] 100% (7/7 plans) ✓
 Phase 06-demo-recording-submission: [██████████] 100% (4/4 plans, agent-scope closed; 3 Franco sessions pending)
-Phase 07-marketing-landing-page: [█░░░░░░░░░] 17% (1/6 plans in progress)
+Phase 07-marketing-landing-page: [██████████] 100% (7/7 plans) ✓
 
-Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 37/37 plans staged.
+Overall milestone: 9/9 phases complete (all phases done), 43/43 plans complete.
 
 ## Performance Metrics
 
@@ -84,6 +84,7 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 | Phase 07-marketing-landing-page P04 | 3min | 2 tasks | 4 files |
 | Phase 07-marketing-landing-page P05 | 3min | 2 tasks | 4 files |
 | Phase 07-marketing-landing-page P06 | 4min | 2 tasks | 3 files |
+| Phase 07-marketing-landing-page P07 | 4min | 2 tasks | 5 files |
 
 ## Decisions
 
@@ -205,6 +206,9 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 - [Phase 07-06]: Modal-on-click (thumbnail poster + VideoModal) used over inline iframe — keeps visitor on page, avoids double player
 - [Phase 07-06]: Footer is RSC (no framer-motion) — static links have zero hydration overhead (RESEARCH Pitfall 3)
 - [Phase 07-06]: SETUP-04 attribution string wrapped in JSX string literal to preserve middle-dot (·) and be grep-stable
+- [Phase 07-07]: Playwright resolved to 1.59.1 from ^1.48.0 pin — no issue; 1.59 is backward compatible with config pattern
+- [Phase 07-07]: vercel.json uses @-secret references (not plain env values) — keeps secrets out of repo; operator sets once in Vercel dashboard
+- [Phase 07-07]: VALIDATION.md status updated to complete — .planning/ is gitignored so update is documentation-only (not in git commit)
 
 ## Blockers
 
@@ -224,8 +228,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-13T11:39:58.982Z
-**Stopped at:** Completed 07-06-try-it-footer-PLAN.md
+**Last session:** 2026-04-13T11:46:50.000Z
+**Stopped at:** Completed 07-07-deploy-validation-smoke-tests-PLAN.md — Phase 7 agent-scope CLOSED
 **Resume file:** None
 **Next action:** Franco — 2026-04-15 AM run §1 (Day 5 rehearsal). Then §3 (Day 6 final), §4 (YouTube upload + `./scripts/substitute-video-url.sh`), §5-7 on 2026-04-17 (preflight + claim-hygiene + DoraHacks publish + `./scripts/substitute-dorahacks-url.sh`).
 

@@ -65,7 +65,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 - [ ] **Phase 4: Enclave Gate Middleware + Gated Endpoint** — Add the `withEnclaveGate` middleware, one gated demo endpoint, and the enrollment-freeze discipline.
 - [x] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL routine, cached demo fixtures. (completed 2026-04-13; Plan 05-07 Tasks 1–3 deferred to recording-day pre-flight)
 - [ ] **Phase 6: Demo Recording + Submission** — Rehearsal, final recording, README, DoraHacks writeup, submission.
-- [ ] **Phase 7: Marketing Landing Page (`apps/landing/`)** — Judges-facing Next.js 15 + Framer Motion + Lenis parallax landing that pitches Enclave's vision and funnels to the console via a "Go to App" CTA.
+- [x] **Phase 7: Marketing Landing Page (`apps/landing/`)** — Judges-facing Next.js 15 + Framer Motion + Lenis parallax landing that pitches Enclave's vision and funnels to the console via a "Go to App" CTA. (completed 2026-04-13; 7/7 plans; 12 Playwright tests green; build exits 0)
 
 ## Phase Details
 
@@ -242,12 +242,12 @@ Plans:
 
 **Plans**: 7 plans across 4 waves (wave 1: scaffold → wave 2: layout/providers → wave 3: 4 parallel section plans → wave 4: deploy + validation)
   - [x] 07-01-scaffold-apps-landing.md — Next.js 15 + React 19 + Tailwind v4 + Framer Motion 11 + Lenis workspace scaffold with pinned versions; @theme tokens + utility subset ported from `app/css/tailwind.src.css` (SETUP-07 substrate; wave 1) ✓ 2026-04-13
-  - [ ] 07-02-lenis-provider-layout.md — LenisProvider + MotionProvider client wrappers, `next/font/google` wiring, metadata + OG image + icon generators, `lib/constants.ts` env surface, `.env.example` (SETUP-07, DEMO-06; wave 2)
-  - [ ] 07-03-hero-section.md — HeroSection with parallax (useScroll/useTransform), slogan H1, dual CTA + reusable UI primitives (BtnPrimary/BtnGhost/Pill/VideoModal) (DEMO-01, DEMO-02, DEMO-06; wave 3)
-  - [ ] 07-04-problem-how-it-works.md — ProblemSection (RSC, locked editorial copy) + HowItWorks (whileInView) + DiagramSvg (3-node facilitator flow with pathLength arrows; SETUP-07 narrative footnote) (DEMO-01, DEMO-06, SETUP-07; wave 3)
-  - [ ] 07-05-three-orgs-section.md — ThreeOrgs scroll-linked convergence with OrgCard + PoolIcon primitives; locked persona names verbatim; payment-dot pulses staggered (POOL-02, DEMO-06; wave 3)
-  - [ ] 07-06-try-it-footer.md — TryItSection (YouTube thumbnail → VideoModal, HAS_VIDEO-guarded) + Footer (GitHub / DoraHacks / Stellar Agentic Hackathon 2026 badge / SETUP-04 attribution) (DEMO-01, DEMO-02, DEMO-04, DEMO-06, SETUP-04; wave 3)
-  - [ ] 07-07-deploy-validation-smoke-tests.md — Playwright install + smoke.spec (9+ tests) + claim-hygiene.spec (DEMO-06 deny-list + SETUP-07 positive) + apps/landing/README.md + vercel.json + VALIDATION.md finalization (ALL phase reqs; wave 4)
+  - [x] 07-02-lenis-provider-layout.md — LenisProvider + MotionProvider client wrappers, `next/font/google` wiring, metadata + OG image + icon generators, `lib/constants.ts` env surface, `.env.example` (SETUP-07, DEMO-06; wave 2) ✓ 2026-04-13
+  - [x] 07-03-hero-section.md — HeroSection with parallax (useScroll/useTransform), slogan H1, dual CTA + reusable UI primitives (BtnPrimary/BtnGhost/Pill/VideoModal) (DEMO-01, DEMO-02, DEMO-06; wave 3) ✓ 2026-04-13
+  - [x] 07-04-problem-how-it-works.md — ProblemSection (RSC, locked editorial copy) + HowItWorks (whileInView) + DiagramSvg (3-node facilitator flow with pathLength arrows; SETUP-07 narrative footnote) (DEMO-01, DEMO-06, SETUP-07; wave 3) ✓ 2026-04-13
+  - [x] 07-05-three-orgs-section.md — ThreeOrgs scroll-linked convergence with OrgCard + PoolIcon primitives; locked persona names verbatim; payment-dot pulses staggered (POOL-02, DEMO-06; wave 3) ✓ 2026-04-13
+  - [x] 07-06-try-it-footer.md — TryItSection (YouTube thumbnail → VideoModal, HAS_VIDEO-guarded) + Footer (GitHub / DoraHacks / Stellar Agentic Hackathon 2026 badge / SETUP-04 attribution) (DEMO-01, DEMO-02, DEMO-04, DEMO-06, SETUP-04; wave 3) ✓ 2026-04-13
+  - [x] 07-07-deploy-validation-smoke-tests.md — Playwright install + smoke.spec (9+ tests) + claim-hygiene.spec (DEMO-06 deny-list + SETUP-07 positive) + apps/landing/README.md + vercel.json + VALIDATION.md finalization (ALL phase reqs; wave 4) ✓ 2026-04-13
 
 **Wave structure:**
 - Wave 1 (1 plan): 07-01 scaffold
