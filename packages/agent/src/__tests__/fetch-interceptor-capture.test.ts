@@ -187,9 +187,9 @@ describe('capture mode (OPS-03)', () => {
     expect(typeof proof['a']).toBe('string');
     expect(typeof proof['b']).toBe('string');
     expect(typeof proof['c']).toBe('string');
-    expect(proof['a'].length).toBe(128);   // 64 bytes * 2 hex chars
-    expect(proof['b'].length).toBe(256);   // 128 bytes * 2 hex chars
-    expect(proof['c'].length).toBe(128);   // 64 bytes * 2 hex chars
+    expect((proof['a'] ?? '').length).toBe(128);   // 64 bytes * 2 hex chars
+    expect((proof['b'] ?? '').length).toBe(256);   // 128 bytes * 2 hex chars
+    expect((proof['c'] ?? '').length).toBe(128);   // 64 bytes * 2 hex chars
 
     // extData.recipient must be the payTo address
     const extData = entry['extData'] as Record<string, unknown>;

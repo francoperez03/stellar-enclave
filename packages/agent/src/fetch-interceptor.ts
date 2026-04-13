@@ -14,7 +14,8 @@
 //   - 'facilitator_rejected' : /settle returned non-200/409
 //   - 'retry_402'            : retry after settlement still returned 402
 
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { EnclavePaymentError } from './types.js';
 import type { FixtureIndex, ExtData, EnclaveNote, AgentBundle } from './types.js';
 import { selectNote } from './note-selector.js';
@@ -203,6 +204,14 @@ export async function createInterceptingFetch(
     }
   }
 
+  // Capture mode: ENCLAVE_FIXTURE_CAPTURE=1 AND fixturePath set.
+  // In capture mode the fixture read path is bypassed — the live prover always runs
+  // so the captured fixture is fresh. After a successful settle the entry is written.
+  const captureMode = fixturePath !== undefined && process.env['ENCLAVE_FIXTURE_CAPTURE'] === '1';
+  if (captureMode) {
+    log.info({ fixturePath }, 'capture mode enabled — will write fixture entries after successful live settle');
+  }
+
   // Load prover artifacts lazily only when needed (avoids startup cost for fixture-only mode)
   let proverHandle: ProverHandle | null = null;
   async function getProver(): Promise<ProverHandle> {
@@ -238,12 +247,14 @@ export async function createInterceptingFetch(
     let proofPayload: {
       proof: { a: Uint8Array; b: Uint8Array; c: Uint8Array };
       publicInputs: ShieldedProofPublicInputs;
+      /** Raw 352-byte public input bytes — set only on the live-prove path for capture mode */
+      publicInputBytes?: Uint8Array;
       extData: ExtData;
       nullifier: string;
     };
 
     const fixtureEntry = fixtureIndex?.[url];
-    if (fixtureEntry) {
+    if (fixtureEntry && !captureMode) {
       // Fixture mode: skip WASM prover (SDK-03 / OPS-03 pre-generated proof)
       log.info({ url, phase: 'prove' }, 'fixture cache hit — using pre-generated proof');
       const fxProof = fixtureEntry.proof as unknown as { proof: number[] };
@@ -255,7 +266,7 @@ export async function createInterceptingFetch(
         nullifier: fixtureEntry.note.nullifier,
       };
     } else {
-      if (fixtureIndex !== null) {
+      if (fixtureIndex !== null && !captureMode) {
         log.warn({ url, phase: 'prove' }, 'fixture cache miss — falling back to live proving');
       }
 
@@ -294,6 +305,7 @@ export async function createInterceptingFetch(
       proofPayload = {
         proof: proveResult.proofComponents,
         publicInputs: decomposePublicInputs(proveResult.publicInputBytes),
+        publicInputBytes: proveResult.publicInputBytes,
         extData,
         nullifier: note.nullifier,
       };
@@ -370,6 +382,57 @@ export async function createInterceptingFetch(
     const settleJson = (await settleResp.json()) as { transaction: string };
     const txHash = settleJson.transaction;
     log.info({ orgId: bundle.orgId, url, phase: 'retry', txHash }, 'settlement confirmed — retrying');
+
+    // OPS-03 capture mode: write fixture entry after successful live prove + settle.
+    // Only runs when ENCLAVE_FIXTURE_CAPTURE=1 AND fixturePath is set.
+    // Capture failures are non-fatal — the user already got their response.
+    if (captureMode && fixturePath) {
+      try {
+        // Load existing index (merge) or start fresh
+        let currentIndex: Record<string, unknown> = {};
+        try {
+          const rawExisting = await readFile(fixturePath, 'utf-8');
+          currentIndex = JSON.parse(rawExisting) as Record<string, unknown>;
+        } catch {
+          // First write — no pre-existing file; currentIndex stays empty
+        }
+
+        // Build the entry in the exact shape the read path accepts (matches e2e-proof.json layout).
+        // proof.a/b/c are hex strings of the uncompressed Groth16 components.
+        // publicInputs is a 704-char hex string (352 bytes).
+        // extData uses hex-encoded encrypted outputs and string ext_amount.
+        // note carries commitment + nullifier as decimal strings.
+        const capturedEntry = {
+          proof: {
+            a: toHex(proofPayload.proof.a),
+            b: toHex(proofPayload.proof.b),
+            c: toHex(proofPayload.proof.c),
+          },
+          publicInputs: toHex(proofPayload.publicInputBytes ?? new Uint8Array(352)),
+          extData: {
+            recipient: proofPayload.extData.recipient,
+            ext_amount: proofPayload.extData.ext_amount.toString(),
+            encrypted_output0: toHex(proofPayload.extData.encrypted_output0),
+            encrypted_output1: toHex(proofPayload.extData.encrypted_output1),
+          },
+          note: {
+            commitment: note.commitment,
+            nullifier: note.nullifier,
+          },
+          _meta: {
+            generatedAt: new Date().toISOString(),
+            capturedByPlan: '05-03',
+          },
+        };
+
+        currentIndex[url] = capturedEntry;
+        await mkdir(dirname(fixturePath), { recursive: true });
+        await writeFile(fixturePath, JSON.stringify(currentIndex, null, 2), 'utf-8');
+        log.info({ fixturePath, url }, 'fixture entry captured');
+      } catch (err) {
+        log.warn({ err, fixturePath, url }, 'fixture capture failed (non-fatal)');
+      }
+    }
 
     // Retry original request with X-PAYMENT header
     const resp2 = await globalThis.fetch(url, {
