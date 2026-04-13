@@ -73,6 +73,21 @@ A ≤3-minute video demo is recorded on 2026-04-15 (rehearsal) and 2026-04-16 (f
 
 **Pre-generated proofs note (honest disclosure):** The recorded demo uses pre-generated proofs from `demo/fixtures/` rather than live proof generation during the video. This is documented honestly because live proving may exceed the video's pacing budget.
 
+## Testnet Contracts
+
+All four Soroban contracts are live on Stellar testnet. Source of truth: [`scripts/deployments.json`](scripts/deployments.json). Rendered by `scripts/render-contracts-table.sh`.
+
+| Contract | Address | Stellar Expert |
+|----------|---------|----------------|
+| Pool (`pool`) | `CA6B2SZXWMAJIL44YNP4FPUASXHPCFXAA63UQACKX72L2RJPREWII3WD` | [View](https://stellar.expert/explorer/testnet/contract/CA6B2SZXWMAJIL44YNP4FPUASXHPCFXAA63UQACKX72L2RJPREWII3WD) |
+| ASP Membership (`asp-membership`) | `CC7QVJXI2DKIM2P25M42FS4OQLAS4UAHGJKH25CJEWYHW32FF65GEQZN` | [View](https://stellar.expert/explorer/testnet/contract/CC7QVJXI2DKIM2P25M42FS4OQLAS4UAHGJKH25CJEWYHW32FF65GEQZN) |
+| ASP Non-Membership (`asp-non-membership`) | `CCMC7EA5RO7NFSV4PEJR7DARQWNYPH5BR6QVN7RTYOMLHEOJK6Z5R3RF` | [View](https://stellar.expert/explorer/testnet/contract/CCMC7EA5RO7NFSV4PEJR7DARQWNYPH5BR6QVN7RTYOMLHEOJK6Z5R3RF) |
+| Groth16 Verifier (`circom-groth16-verifier`) | `CBINRYR4N62W4HOI26R3ARZCJXFYTKZESVAL6LJHRNYCO6GNNUVO2DFA` | [View](https://stellar.expert/explorer/testnet/contract/CBINRYR4N62W4HOI26R3ARZCJXFYTKZESVAL6LJHRNYCO6GNNUVO2DFA) |
+
+**Admin / deployer:** [`GBWJZZ3XSNAY3WLFNLXUZXEEYMZCYVG4TW6Z5VSASJS2TOWF7GGPPKMW`](https://stellar.expert/explorer/testnet/account/GBWJZZ3XSNAY3WLFNLXUZXEEYMZCYVG4TW6Z5VSASJS2TOWF7GGPPKMW) · TTL extended daily via `scripts/preflight.sh pool-ttl-bump` during the 2026-04-10 → 2026-04-17 hackathon window (see `.planning/phases/05-*` for the routine).
+
+**Facilitator health:** `GET $FACILITATOR_URL/health` returns the live USDC float + gas float + last-seen pool root. Defaults to `http://localhost:3001/health` per Phase 2/5 convention. Public URL (if hosted) lands here before submission.
+
 ## Credits
 
 Enclave is a fork of [NethermindEth/stellar-private-payments](https://github.com/NethermindEth/stellar-private-payments), originally authored by the Stellar Development Foundation and maintained by Nethermind. Copyright for the upstream code remains with its original authors. Enclave adds a new product layer (treasury, facilitator, SDK, gate, demo) on top of the upstream shielded pool + circuits + prover without modifying any upstream source.
