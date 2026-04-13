@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — ported from app/css/tailwind.src.css lines 44-59 */
+  --color-cream: #f5f0e8;
+  --color-surface: #ffffff;
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f3f4f6;
+  --color-ink-200: #e5e7eb;
+  --color-ink-300: #d1d5db;
+  --color-ink-400: #9ca3af;
+  --color-ink-500: #6b7280;
+  --color-ink-700: #374151;
+  --color-ink-900: #1a1a1a;
+  --color-gold-300: #ecc46c;
+  --color-gold-400: #e0b43f;
+  --color-gold-500: #d4a017;
+  --color-gold-600: #b8890f;
+  --color-gold-700: #8b6914;
+
+  /* Typography — from app/css/tailwind.src.css lines 37-39 */
+  --font-sans: "Outfit", ui-sans-serif, system-ui;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-headline: "DM Serif Display", ui-serif, Georgia, serif;
+
+  --color-border: var(--color-ink-200);
+}
+
+/* Body ambient background — ported from app/css/tailwind.src.css (light theme) */
+@layer base {
+  body {
+    background-color: var(--color-cream);
+    background-image:
+      radial-gradient(circle at 12% 8%,  rgba(212, 160, 23, 0.10) 0%, transparent 38%),
+      radial-gradient(circle at 92% 96%, rgba(212, 160, 23, 0.07) 0%, transparent 42%),
+      radial-gradient(rgba(26, 26, 26, 0.045) 1px, transparent 1px);
+    background-size: auto, auto, 22px 22px;
+    background-attachment: fixed, fixed, fixed;
+    color: var(--color-ink-900);
+  }
+}
+
+/* Keyframes — ported verbatim from app/css/tailwind.src.css */
+@layer utilities {
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up { animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .animate-scale-in { animation: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.0); }
+    50%      { box-shadow: 0 0 0 6px rgba(212, 160, 23, 0.10); }
+  }
+  .animate-glow-pulse { animation: glow-pulse 2.4s ease-in-out infinite; }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.5; }
+  }
+  .animate-pulse-dot { animation: pulse-dot 2s infinite; }
+
+  .delay-75  { animation-delay: 75ms; }
+  .delay-150 { animation-delay: 150ms; }
+  .delay-225 { animation-delay: 225ms; }
+  .delay-300 { animation-delay: 300ms; }
+}
+
+/* Component utilities — ported from app/css/tailwind.src.css (scoped prefix dropped — landing is always light-mode only). */
+@layer base {
+  .card-surface {
+    background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.88) 100%);
+    box-shadow: 0 1px 0 0 rgba(26,26,26,0.02), 0 8px 20px -12px rgba(26,26,26,0.10);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .card-surface:hover {
+    box-shadow: 0 1px 0 0 rgba(26,26,26,0.03), 0 14px 28px -14px rgba(26,26,26,0.14);
+    border-color: var(--color-ink-300);
+  }
+  .card-lift:hover { transform: translateY(-2px); }
+
+  .action-card { position: relative; isolation: isolate; overflow: hidden; }
+  .action-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-gold-500), var(--color-gold-300));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .action-card:hover::before { opacity: 1; }
+
+  .btn-primary {
+    background-image: linear-gradient(180deg, var(--color-gold-500) 0%, var(--color-gold-600) 100%);
+    color: #ffffff;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 14px -6px rgba(212,160,23,0.55);
+    transition: transform 0.12s ease, box-shadow 0.18s ease;
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 10px 22px -8px rgba(212,160,23,0.60);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(1px); }
+
+  .btn-ghost {
+    background-color: var(--color-surface);
+    color: var(--color-ink-900);
+    transition: border-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--color-gold-500); }
+  .btn-ghost:active:not(:disabled) { transform: translateY(1px); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.25rem 0.625rem; border-radius: 9999px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
+    background: var(--color-surface);
+    border: 1px solid var(--color-ink-200);
+    color: var(--color-ink-700);
+  }
+  .pill-dot { width: 6px; height: 6px; border-radius: 9999px; flex-shrink: 0; }
+
+  .modal-shell { background-color: rgba(26,26,26,0.45); backdrop-filter: blur(8px) saturate(120%); }
+  .modal-card { box-shadow: 0 25px 50px -12px rgba(26,26,26,0.35), 0 0 0 1px rgba(26,26,26,0.04); }
+
+  .divider-gradient {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--color-ink-200) 50%, transparent 100%);
+  }
+
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-cream), 0 0 0 4px var(--color-gold-500);
+    outline: none;
+  }
+}
