@@ -277,6 +277,7 @@ export async function depositForOrg(params = {}) {
             ledger:     0,
             owner:      adminAddress,
         });
+        onStatus?.(`Deposit: saved real note at leafIndex ${leafIndex0} (amount=${amountStroops})`);
         // Zero-amount change note — becomes the agent's null slot at spend time.
         await stateManager?.saveNote?.({
             commitment: commitment1Hex,
@@ -287,6 +288,7 @@ export async function depositForOrg(params = {}) {
             ledger:     0,
             owner:      adminAddress,
         });
+        onStatus?.(`Deposit: saved change note at leafIndex ${leafIndex1} (amount=0)`);
     } catch (saveErr) {
         // Don't fail the deposit — the on-chain tx already succeeded and the
         // enclave_note_tags row is written. But warn loudly so the agent-spend

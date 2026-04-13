@@ -247,6 +247,28 @@ export async function clear() {
     console.log('[NotesStore] Cleared all notes');
 }
 
+/**
+ * Delete all notes owned by a specific Stellar address. Other accounts'
+ * notes are untouched. On-chain pool state is unaffected — this only wipes
+ * the local private note cache.
+ *
+ * @param {string} owner  Stellar G... address
+ * @returns {Promise<number>}  Number of notes deleted
+ */
+export async function clearNotesForOwner(owner) {
+    if (!owner) throw new Error('clearNotesForOwner: owner required');
+    const all = await db.getAll('user_notes');
+    let deleted = 0;
+    for (const note of all) {
+        if (note.owner === owner) {
+            await db.del('user_notes', note.id);
+            deleted += 1;
+        }
+    }
+    console.log(`[NotesStore] Cleared ${deleted} note(s) for owner ${owner.slice(0, 8)}...`);
+    return deleted;
+}
+
 // Key derivation constants.
 // These MUST remain constant for backwards compatibility.
 

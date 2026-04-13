@@ -69,6 +69,7 @@ const els = {
     enrollAgentBtn:       document.getElementById('enroll-agent-btn'),
     exportPkgZipBtn:      document.getElementById('export-pkg-zip-btn'),
     exportPkgMdBtn:       document.getElementById('export-pkg-md-btn'),
+    resetNotesBtn:        document.getElementById('reset-notes-btn'),
     enrollModal:          document.getElementById('enroll-modal'),
     enrollNameInput:      document.getElementById('enroll-agent-name-input'),
     enrollNameError:      document.getElementById('enroll-name-error'),
@@ -384,6 +385,27 @@ async function exportAgentPackage(format) {
     }
 }
 
+async function handleResetNotes() {
+    if (!state.wallet.connected) {
+        return showToast('Connect Freighter first.', 'error');
+    }
+    const ok = window.confirm(
+        'Delete all local notes for this org? On-chain pool state is unaffected; ' +
+        'only your browser\'s private note cache is wiped. ' +
+        'Useful when stale notes from pre-bridge deposits are breaking the agent flow.',
+    );
+    if (!ok) return;
+    try {
+        const deleted = await StateManager.clearNotesForOwner(state.wallet.address);
+        logActivity(`Reset notes: deleted ${deleted} local note(s) for ${shortAddress(state.wallet.address, 6, 4)}`);
+        showToast(`Cleared ${deleted} local note(s).`, 'success');
+        await renderForCurrentAccount();
+    } catch (e) {
+        logActivity(`Reset notes failed: ${e.message ?? e}`);
+        showToast(`Reset failed: ${e.message ?? e}`, 'error');
+    }
+}
+
 async function autoLoadDashboard(orgId) {
     const facilitatorUrl = getFacilitatorUrl();
     try {
@@ -690,6 +712,7 @@ async function init() {
     els.enrollSubmitBtn.addEventListener('click', handleEnrollSubmit);
     els.exportPkgZipBtn?.addEventListener('click', () => exportAgentPackage('zip'));
     els.exportPkgMdBtn?.addEventListener('click', () => exportAgentPackage('markdown'));
+    els.resetNotesBtn?.addEventListener('click', handleResetNotes);
     els.reloadPageBtn.addEventListener('click', () => location.reload());
 
     // Modal dismiss on Escape

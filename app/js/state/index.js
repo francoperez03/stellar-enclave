@@ -353,6 +353,17 @@ export const StateManager = {
     },
 
     /**
+     * Deletes all notes for a specific owner (local-only — on-chain state
+     * is not affected). Used by the "Reset notes" button when the operator
+     * wants a clean local state without touching the pool.
+     * @param {string} owner - Stellar G... address
+     * @returns {Promise<number>} Number of notes deleted
+     */
+    async clearNotesForOwner(owner) {
+        return notesStore.clearNotesForOwner(owner);
+    },
+
+    /**
      * Imports notes from a JSON file.
      * @param {File|Blob} file - Notes JSON file
      * @returns {Promise<number>} Number of notes imported
