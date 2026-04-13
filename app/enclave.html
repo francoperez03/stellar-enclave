@@ -3,319 +3,487 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enclave · Org Admin</title>
+  <title>Enclave · Treasury Console</title>
   <meta name="description" content="Local browser admin for Enclave shielded organizations on Stellar." />
 
   <link rel="stylesheet" href="css/app.css" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 
-<body class="bg-dark-950 text-dark-50 font-sans min-h-screen antialiased">
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 min-h-screen">
+<body class="theme-light bg-cream text-ink-900 font-sans min-h-screen antialiased">
+<div class="max-w-5xl mx-auto px-6 lg:px-8 pt-6 pb-16 flex flex-col gap-8 min-h-screen">
 
-  <!-- Region 1: Header (always visible) -->
-  <header class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl overflow-visible relative z-50" role="banner">
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-ink-200 animate-fade-up" role="banner">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg shadow-lg shadow-brand-500/25" aria-hidden="true">
-        <svg class="w-6 h-6 text-dark-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="w-11 h-11 flex items-center justify-center rounded-xl shadow-lg shadow-gold-500/30 animate-glow-pulse" style="background-image: linear-gradient(135deg, var(--color-gold-500) 0%, var(--color-gold-600) 100%);" aria-hidden="true">
+        <svg class="w-6 h-6 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
       </div>
       <div>
-        <h1 class="text-xl font-semibold">
-          Enclave <span class="text-dark-400 font-normal">· Org Admin</span>
-        </h1>
-        <p class="text-xs text-dark-500">Org admin console</p>
+        <h1 class="font-headline text-2xl text-ink-900 leading-tight tracking-tight">Enclave</h1>
+        <p class="text-xs text-ink-500">Your agents. Your rules. Out of sight.</p>
       </div>
     </div>
-    <div class="flex items-center gap-3 overflow-visible">
-      <div class="flex items-center gap-2 px-3 py-2 bg-dark-800 border border-dark-700 rounded-full text-sm text-dark-300">
-        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse-dot shadow-sm shadow-emerald-500" aria-hidden="true"></span>
+    <div class="flex items-center gap-3">
+      <span class="pill">
+        <span class="pill-dot bg-emerald-500 animate-pulse-dot" aria-hidden="true"></span>
         <span id="network-chip">No network</span>
-      </div>
-      <div class="relative overflow-visible">
-        <button
-          type="button"
-          id="connect-freighter-btn"
-          class="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-brand-500 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-          aria-label="Connect Freighter wallet"
-        >
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <rect x="2" y="6" width="20" height="14" rx="2"/>
-            <path d="M22 10h-4a2 2 0 0 0 0 4h4"/>
-            <circle cx="18" cy="12" r="1" fill="currentColor"/>
-            <path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
-          </svg>
-          <span>Connect Freighter</span>
-        </button>
-      </div>
+      </span>
+      <button
+        type="button"
+        id="connect-freighter-btn"
+        class="btn-ghost focus-ring inline-flex items-center gap-2 border border-ink-300 text-ink-900 text-sm font-medium rounded-md px-4 py-2"
+        aria-label="Connect Freighter wallet"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <rect x="2" y="6" width="20" height="14" rx="2"/>
+          <path d="M22 10h-4a2 2 0 0 0 0 4h4"/>
+          <circle cx="18" cy="12" r="1" fill="currentColor"/>
+          <path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
+        </svg>
+        <span>Connect Freighter</span>
+      </button>
     </div>
   </header>
 
-  <!-- Region 2: Deployments banner (hidden unless deployments.json missing or initialized !== true) -->
-  <section id="deployments-banner" hidden class="bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl p-4 sm:p-6 flex items-start justify-between gap-4" aria-labelledby="deployments-banner-heading">
+  <!-- Deployments banner -->
+  <section id="deployments-banner" hidden class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-start justify-between gap-4" aria-labelledby="deployments-banner-heading">
     <div>
-      <h2 id="deployments-banner-heading" class="text-sm uppercase tracking-[0.25em] text-rose-400 font-semibold">Contracts not deployed yet</h2>
-      <p class="text-sm text-rose-200 mt-2">Run <code class="font-mono">scripts/deploy.sh</code>, then reload this page.</p>
+      <h2 id="deployments-banner-heading" class="font-headline text-lg text-red-900">Contracts not deployed yet</h2>
+      <p class="text-sm text-red-700 mt-1">Run <code class="font-mono text-xs bg-red-100 px-1.5 py-0.5 rounded">scripts/deploy.sh</code>, then reload this page.</p>
     </div>
-    <button id="reload-page-btn" type="button" class="flex-shrink-0 bg-dark-800 border border-dark-700 rounded-lg text-sm font-semibold text-dark-50 px-4 py-2 hover:border-brand-500 hover:text-brand-400 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950">Reload Page</button>
+    <button id="reload-page-btn" type="button" class="flex-shrink-0 inline-flex items-center gap-2 bg-surface border border-red-300 text-red-800 text-sm font-medium rounded-md px-4 py-2 hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Reload Page</button>
   </section>
 
-  <main id="main-content" class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+  <main id="main-content" class="flex flex-col gap-8">
 
-    <!-- Region 3: Org Bootstrap card (hidden unless wallet connected + no org row) -->
-    <section id="org-bootstrap-card" hidden class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="org-bootstrap-heading">
-      <h2 id="org-bootstrap-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Org bootstrap</h2>
-      <div class="mt-4 flex flex-col gap-4">
-        <p class="text-sm text-dark-300">No org yet for this account. Create an org to derive your spending key, register your ASP entry, and start depositing. One Freighter account holds exactly one org.</p>
-        <!-- Permissionless-ASP warning banner -->
-        <div class="bg-amber-950/40 border border-amber-700/50 px-3 py-2 rounded-lg text-xs text-amber-300">
-          <strong>Notice:</strong> This Enclave pool uses a permissionless ASP. Anyone with a Stellar account on testnet can insert themselves into the membership tree. This is intentional for the hackathon — in production, access would be gated by the facilitator.
+    <!-- HERO STATS -->
+    <section aria-labelledby="hero-heading" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <h2 id="hero-heading" class="sr-only">Org overview</h2>
+
+      <div class="card-surface card-lift stat-tile stat-tile-accent border border-ink-200 rounded-xl p-6 pb-10 flex flex-col gap-1 animate-fade-up delay-75">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Treasury balance</span>
+          <svg class="w-4 h-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <div id="org-bootstrap-error" hidden class="bg-rose-500/10 border border-rose-500/40 px-3 py-2 rounded-lg text-xs text-rose-300"></div>
-        <div class="flex justify-end">
-          <button
-            id="create-org-btn"
-            type="button"
-            class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            <span id="create-org-btn-text">Create Org</span>
-          </button>
+        <span id="hero-treasury-value" class="stat-value font-headline text-4xl mt-1">--</span>
+        <span class="text-xs text-ink-500" id="hero-treasury-sub">USDC, shielded</span>
+      </div>
+
+      <div class="card-surface card-lift stat-tile border border-ink-200 rounded-xl p-6 flex flex-col gap-1 animate-fade-up delay-150">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Agents enrolled</span>
+          <svg class="w-4 h-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
+        <span id="hero-agents-value" class="stat-value font-headline text-4xl mt-1">--</span>
+        <span class="text-xs text-ink-500">Active payment authorities</span>
+      </div>
+
+      <div class="card-surface card-lift stat-tile border border-ink-200 rounded-xl p-6 flex flex-col gap-1 animate-fade-up delay-225">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Network</span>
+          <svg class="w-4 h-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <span id="hero-network-value" class="stat-value font-headline text-4xl mt-1">--</span>
+        <span class="text-xs text-ink-500" id="hero-network-sub">Connect Freighter to begin</span>
       </div>
     </section>
 
-    <!-- Region 4+5: Active Org card + Agents list (hidden unless org exists) -->
-    <section id="org-card" hidden class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="org-card-heading">
-      <h2 id="org-card-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Active org</h2>
-
-      <!-- Org identity tiles -->
-      <div class="mt-4 grid grid-cols-2 xl:grid-cols-3 gap-4">
-        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
-          <div class="text-[10px] uppercase tracking-wide text-dark-400 mb-1">Org ID</div>
-          <div class="font-mono text-xs text-dark-200 break-all" id="org-id-readout">--</div>
+    <!-- Org Bootstrap (no org yet) -->
+    <section id="org-bootstrap-card" hidden class="card-surface border border-ink-200 rounded-xl p-6 flex flex-col gap-4 animate-fade-up" aria-labelledby="org-bootstrap-heading">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gold-500/10 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </div>
-        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] uppercase tracking-wide text-dark-400">Spending Pubkey</span>
-            <button type="button" class="copy-tile-btn p-1 text-dark-500 hover:text-brand-500 transition-colors" data-target="org-pubkey-readout" aria-label="Copy spending pubkey" title="Copy">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
-            </button>
-          </div>
-          <div class="font-mono text-xs text-dark-200 break-all" id="org-pubkey-readout">--</div>
-        </div>
-        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] uppercase tracking-wide text-dark-400">ASP Leaf</span>
-            <button type="button" class="copy-tile-btn p-1 text-dark-500 hover:text-brand-500 transition-colors" data-target="asp-leaf-readout" aria-label="Copy ASP leaf" title="Copy">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
-            </button>
-          </div>
-          <div class="font-mono text-xs text-dark-200 break-all" id="asp-leaf-readout">--</div>
-        </div>
-        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
-          <div class="text-[10px] uppercase tracking-wide text-dark-400 mb-1">ASP Leaf Index</div>
-          <div class="font-mono text-xs text-dark-200" id="asp-leaf-index-readout">--</div>
-        </div>
-        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
-          <div class="text-[10px] uppercase tracking-wide text-dark-400 mb-1">Created</div>
-          <div class="font-mono text-xs text-dark-200" id="org-created-at-readout">--</div>
-        </div>
-        <div class="p-3 bg-dark-800 border border-dark-700 rounded-lg">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] uppercase tracking-wide text-dark-400">Deploy Tx</span>
-          </div>
-          <div class="font-mono text-xs text-brand-400" id="org-tx-hash-readout">--</div>
+        <div>
+          <h2 id="org-bootstrap-heading" class="font-headline text-xl text-ink-900">Set up your org</h2>
+          <p class="text-sm text-ink-500 mt-1">No org for this Freighter account yet. Create one to derive your spending key, register your ASP entry, and start depositing. One Freighter account holds exactly one org.</p>
         </div>
       </div>
 
-      <!-- Deposit + Enroll actions -->
-      <div class="mt-6 flex flex-wrap gap-3 items-end">
-        <div class="flex flex-col gap-2 flex-1 min-w-[180px]">
-          <label for="deposit-amount-input" class="text-[10px] uppercase tracking-wide text-dark-400">Deposit amount (USDC)</label>
-          <input
-            id="deposit-amount-input"
-            type="number"
-            min="0"
-            step="0.0000001"
-            inputmode="decimal"
-            placeholder="10"
-            class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm font-mono text-dark-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-          />
-        </div>
+      <div class="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-md text-xs flex items-start gap-2">
+        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span><strong>Notice:</strong> This Enclave pool uses a permissionless ASP. Anyone with a Stellar account on testnet can insert themselves into the membership tree. Intentional for the hackathon — production would gate this through the facilitator.</span>
+      </div>
+
+      <div id="org-bootstrap-error" hidden class="bg-red-50 border border-red-200 px-3 py-2 rounded-md text-xs text-red-700"></div>
+
+      <div class="flex justify-end">
         <button
-          id="deposit-btn"
+          id="create-org-btn"
           type="button"
-          class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span id="deposit-btn-text">Deposit USDC</span>
-        </button>
-        <button
-          id="enroll-agent-btn"
-          type="button"
-          class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+          class="btn-primary focus-ring inline-flex items-center gap-2 text-white text-sm font-medium rounded-md px-5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          <span>Enroll Agent</span>
+          <span id="create-org-btn-text">Create Org</span>
         </button>
+      </div>
+    </section>
+
+    <!-- Active Org — actions -->
+    <section id="org-card" hidden class="card-surface border border-ink-200 rounded-xl p-6 flex flex-col gap-6 animate-fade-up delay-150" aria-labelledby="org-card-heading">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 13 9 20 9"/><path d="M4 22h16a2 2 0 0 0 2-2V9.41a2 2 0 0 0-.59-1.41L13.59 0.59A2 2 0 0 0 12.18 0H4a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2z"/></svg>
+          </div>
+          <div>
+            <h2 id="org-card-heading" class="font-headline text-xl text-ink-900">Treasury actions</h2>
+            <p class="text-sm text-ink-500">Move funds in, enrol agents, and export their payment packages.</p>
+          </div>
+        </div>
         <button
-          id="export-pkg-zip-btn"
+          id="org-details-btn"
           type="button"
-          title="Download a self-contained zip with bundle + notes + run.sh for the most recent agent"
-          disabled
-          class="flex items-center gap-2 bg-dark-800 border border-brand-500/60 text-brand-200 rounded-lg text-sm font-semibold px-4 py-2 hover:bg-dark-700 transition disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+          class="focus-ring inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-gold-600 transition-colors rounded-md px-2 py-1.5"
         >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span>Export ZIP</span>
-        </button>
-        <button
-          id="export-pkg-md-btn"
-          type="button"
-          title="Download a single markdown file an AI coding agent can unpack and run"
-          disabled
-          class="flex items-center gap-2 bg-dark-800 border border-brand-500/60 text-brand-200 rounded-lg text-sm font-semibold px-4 py-2 hover:bg-dark-700 transition disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-          <span>Export Markdown</span>
+          <span>Org details</span>
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
 
-      <!-- Region 5: Agents list -->
-      <div class="mt-6 flex flex-col gap-2">
-        <h3 class="text-[10px] uppercase tracking-wide text-dark-400">Agents</h3>
-        <div id="agents-list" class="flex flex-col gap-2">
-          <!-- populated by index.js from tpl-agent-row, or empty state -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- Deposit card -->
+        <div class="action-card card-surface card-lift bg-cream border border-ink-200 rounded-xl p-5 flex flex-col gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4.5 h-4.5 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div>
+              <h3 class="font-headline text-lg text-ink-900 leading-tight">Deposit USDC</h3>
+              <p class="text-xs text-ink-500 mt-1">Top up the shielded treasury. Funds become anonymous notes the agents spend.</p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="deposit-amount-input" class="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Amount (USDC)</label>
+            <input
+              id="deposit-amount-input"
+              type="number"
+              min="0"
+              step="0.0000001"
+              inputmode="decimal"
+              placeholder="10.00"
+              class="input-field bg-surface border border-ink-300 rounded-md px-3 py-2.5 text-sm font-mono text-ink-900 focus:outline-none focus:border-gold-500"
+            />
+          </div>
+          <button
+            id="deposit-btn"
+            type="button"
+            class="btn-primary focus-ring inline-flex items-center justify-center gap-2 text-white text-sm font-medium rounded-md px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span id="deposit-btn-text">Deposit USDC</span>
+          </button>
+        </div>
+
+        <!-- Enroll Agent card -->
+        <div class="action-card card-surface card-lift bg-cream border border-ink-200 rounded-xl p-5 flex flex-col gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4.5 h-4.5 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+            </div>
+            <div>
+              <h3 class="font-headline text-lg text-ink-900 leading-tight">Enrol an agent</h3>
+              <p class="text-xs text-ink-500 mt-1">Issue a one-time bundle so an agent can pay from the treasury without ever seeing your spending key.</p>
+            </div>
+          </div>
+          <button
+            id="enroll-agent-btn"
+            type="button"
+            class="btn-primary focus-ring inline-flex items-center justify-center gap-2 text-white text-sm font-medium rounded-md px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Enrol Agent</span>
+          </button>
+
+          <div class="flex flex-col gap-3 pt-3 border-t border-ink-200">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="text-xs uppercase tracking-wider text-ink-500">Last enrolled — export package</span>
+              <span class="text-[11px] text-ink-500">Hand it off to whoever (or whatever) will pay.</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <button
+                  id="export-pkg-zip-btn"
+                  type="button"
+                  title="Self-contained folder. Unzip → chmod +x run.sh → ./run.sh. Anyone (or any machine) with bash + node can pay from this folder."
+                  disabled
+                  class="inline-flex items-center justify-center gap-2 bg-surface border border-ink-300 text-ink-700 hover:border-gold-500 hover:text-ink-900 text-xs font-medium rounded-md px-3 py-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gold-500"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span>Export ZIP</span>
+                </button>
+                <p class="text-[11px] leading-snug text-ink-500">
+                  <strong class="text-ink-700">For a human or server.</strong>
+                  Unzip and run <code class="font-mono bg-cream px-1 py-0.5 rounded text-[10px]">./run.sh</code> — pays the demo endpoint with one shielded transfer.
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <button
+                  id="export-pkg-md-btn"
+                  type="button"
+                  title="Single .md with all package files as labeled code blocks. Drop into Claude Code / Cursor / OpenCode and ask it to set the folder up and run it."
+                  disabled
+                  class="inline-flex items-center justify-center gap-2 bg-surface border border-ink-300 text-ink-700 hover:border-gold-500 hover:text-ink-900 text-xs font-medium rounded-md px-3 py-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gold-500"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  <span>Export Markdown</span>
+                </button>
+                <p class="text-[11px] leading-snug text-ink-500">
+                  <strong class="text-ink-700">For an AI coding agent.</strong>
+                  Hand the <code class="font-mono bg-cream px-1 py-0.5 rounded text-[10px]">.md</code> to Claude Code / Cursor and say "create the folder and run it" — it unpacks and pays.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Agents panel -->
+    <section id="agents-panel" class="card-surface border border-ink-200 rounded-xl p-6 flex flex-col gap-4 animate-fade-up delay-225" aria-labelledby="agents-panel-heading">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <h2 id="agents-panel-heading" class="font-headline text-xl text-ink-900">Your agents</h2>
+            <p class="text-sm text-ink-500">Active payment authorities for this org.</p>
+          </div>
         </div>
       </div>
+      <div id="agents-list" class="flex flex-col gap-2">
+        <!-- populated by index.js from tpl-agent-row, or empty state -->
+      </div>
     </section>
 
-    <!-- Region 6: Activity Log (always visible, wallet-independent) -->
-    <section class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="activity-heading">
-      <div class="flex items-center justify-between gap-2 mb-3">
-        <h2 id="activity-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Activity</h2>
-      </div>
-      <pre id="activity-log" class="font-mono text-xs text-dark-400 whitespace-pre-wrap"></pre>
-    </section>
+    <!-- Dashboard wrapper (preserves dashboard-section + dashboard-error contract) -->
+    <section id="dashboard-section" class="flex flex-col gap-3" aria-labelledby="dashboard-heading">
+      <h2 id="dashboard-heading" class="sr-only">Detailed dashboard</h2>
 
-    <!-- Region 7: Dashboard (always visible — paste-key login, no Freighter required) -->
-    <section id="dashboard-section" class="xl:col-span-3 bg-dark-900/80 backdrop-blur-sm border border-dark-800 rounded-xl p-4 sm:p-6" aria-labelledby="dashboard-heading">
-      <h2 id="dashboard-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Dashboard</h2>
-      <p class="mt-2 text-xs text-dark-400">Treasury, enrolled agents, and spend history for the connected wallet's org. Loads automatically on Freighter connect.</p>
+      <div id="dashboard-error" hidden class="bg-red-50 border border-red-200 px-3 py-2 rounded-md text-xs text-red-700"></div>
 
-      <!-- Error banner -->
-      <div id="dashboard-error" hidden class="mt-4 bg-rose-500/10 border border-rose-500/40 px-3 py-2 rounded-lg text-xs text-rose-300"></div>
+      <details class="bg-surface border border-ink-200 rounded-lg group" open>
+        <summary class="cursor-pointer list-none flex items-center justify-between px-4 py-3 text-sm font-medium text-ink-900">
+          <span>Treasury balance</span>
+          <svg class="w-4 h-4 text-ink-500 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </summary>
+        <div class="px-4 pb-4 pt-2 border-t border-ink-200 overflow-x-auto">
+          <table id="dashboard-balance-table" class="w-full text-sm font-mono text-ink-700 border-collapse">
+            <thead>
+              <tr class="text-xs uppercase tracking-wider text-ink-500 border-b border-ink-200">
+                <th class="text-left py-2 pr-4 font-medium">Metric</th>
+                <th class="text-left py-2 font-medium">Value</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
 
-      <!-- Treasury balance table -->
-      <div class="mt-6">
-        <h3 class="text-[10px] uppercase tracking-wide text-dark-400 mb-2">Balance</h3>
-        <table id="dashboard-balance-table" class="w-full text-xs font-mono text-dark-200 border-collapse">
-          <thead>
-            <tr class="text-[10px] uppercase tracking-wide text-dark-500 border-b border-dark-700">
-              <th class="text-left py-1 pr-4">Metric</th>
-              <th class="text-left py-1">Value</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <details class="bg-surface border border-ink-200 rounded-lg group">
+        <summary class="cursor-pointer list-none flex items-center justify-between px-4 py-3 text-sm font-medium text-ink-900">
+          <span>Enrolled agents (full table)</span>
+          <svg class="w-4 h-4 text-ink-500 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </summary>
+        <div class="px-4 pb-4 pt-2 border-t border-ink-200 overflow-x-auto">
+          <table id="dashboard-agents-table" class="w-full text-sm font-mono text-ink-700 border-collapse">
+            <thead>
+              <tr class="text-xs uppercase tracking-wider text-ink-500 border-b border-ink-200">
+                <th class="text-left py-2 pr-4 font-medium">Agent</th>
+                <th class="text-left py-2 pr-4 font-medium">Auth PubKey</th>
+                <th class="text-left py-2 font-medium">Enrolled</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
 
-      <!-- Agents table -->
-      <div class="mt-6">
-        <h3 class="text-[10px] uppercase tracking-wide text-dark-400 mb-2">Agents</h3>
-        <table id="dashboard-agents-table" class="w-full text-xs font-mono text-dark-200 border-collapse">
-          <thead>
-            <tr class="text-[10px] uppercase tracking-wide text-dark-500 border-b border-dark-700">
-              <th class="text-left py-1 pr-4">Agent</th>
-              <th class="text-left py-1 pr-4">Auth PubKey</th>
-              <th class="text-left py-1">Enrolled</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <details class="bg-surface border border-ink-200 rounded-lg group">
+        <summary class="cursor-pointer list-none flex items-center justify-between px-4 py-3 text-sm font-medium text-ink-900">
+          <span>Spend history</span>
+          <svg class="w-4 h-4 text-ink-500 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </summary>
+        <div class="px-4 pb-4 pt-2 border-t border-ink-200 overflow-x-auto">
+          <table id="dashboard-history-table" class="w-full text-sm font-mono text-ink-700 border-collapse">
+            <thead>
+              <tr class="text-xs uppercase tracking-wider text-ink-500 border-b border-ink-200">
+                <th class="text-left py-2 pr-4 font-medium">Time</th>
+                <th class="text-left py-2 pr-4 font-medium">Recipient</th>
+                <th class="text-left py-2 pr-4 font-medium">Amount</th>
+                <th class="text-left py-2 font-medium">Tx Hash</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
 
-      <!-- Spend history table -->
-      <div class="mt-6">
-        <h3 class="text-[10px] uppercase tracking-wide text-dark-400 mb-2">Spend History</h3>
-        <table id="dashboard-history-table" class="w-full text-xs font-mono text-dark-200 border-collapse">
-          <thead>
-            <tr class="text-[10px] uppercase tracking-wide text-dark-500 border-b border-dark-700">
-              <th class="text-left py-1 pr-4">Time</th>
-              <th class="text-left py-1 pr-4">Recipient</th>
-              <th class="text-left py-1 pr-4">Amount</th>
-              <th class="text-left py-1">Tx Hash</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <details class="bg-surface border border-ink-200 rounded-lg group">
+        <summary class="cursor-pointer list-none flex items-center justify-between px-4 py-3 text-sm font-medium text-ink-900">
+          <span>Activity log</span>
+          <svg class="w-4 h-4 text-ink-500 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </summary>
+        <div class="px-4 pb-4 pt-2 border-t border-ink-200">
+          <pre id="activity-log" class="font-mono text-xs text-ink-500 whitespace-pre-wrap max-h-64 overflow-y-auto"></pre>
+        </div>
+      </details>
     </section>
 
   </main>
 </div>
 
-<!-- Region 7: Enroll Agent modal (hidden by default) -->
+<!-- Org details modal (technical metadata, kept out of the main view) -->
+<div
+  id="org-details-modal"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="org-details-modal-heading"
+  class="modal-shell fixed inset-0 z-50 flex items-center justify-center p-4"
+>
+  <div class="modal-card animate-scale-in bg-surface border border-ink-200 rounded-xl p-6 w-full max-w-2xl flex flex-col gap-4">
+    <div class="flex items-center justify-between">
+      <h2 id="org-details-modal-heading" class="font-headline text-xl text-ink-900">Org details</h2>
+      <button
+        id="org-details-close-btn"
+        type="button"
+        class="p-1 text-ink-500 hover:text-ink-900 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-gold-500"
+        aria-label="Close"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="text-sm text-ink-500">Immutable identifiers for this org. You don't need them for day-to-day work — share with your auditor or the facilitator team if asked.</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="p-3 bg-cream border border-ink-200 rounded-md">
+        <div class="text-xs uppercase tracking-wider text-ink-500 mb-1">Org ID</div>
+        <div class="font-mono text-xs text-ink-900 break-all" id="org-id-readout">--</div>
+      </div>
+      <div class="p-3 bg-cream border border-ink-200 rounded-md">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs uppercase tracking-wider text-ink-500">Spending pubkey</span>
+          <button type="button" class="copy-tile-btn p-1 text-ink-500 hover:text-gold-600 transition-colors rounded" data-target="org-pubkey-readout" aria-label="Copy spending pubkey" title="Copy">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+          </button>
+        </div>
+        <div class="font-mono text-xs text-ink-900 break-all" id="org-pubkey-readout">--</div>
+      </div>
+      <div class="p-3 bg-cream border border-ink-200 rounded-md">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs uppercase tracking-wider text-ink-500">ASP leaf</span>
+          <button type="button" class="copy-tile-btn p-1 text-ink-500 hover:text-gold-600 transition-colors rounded" data-target="asp-leaf-readout" aria-label="Copy ASP leaf" title="Copy">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+          </button>
+        </div>
+        <div class="font-mono text-xs text-ink-900 break-all" id="asp-leaf-readout">--</div>
+      </div>
+      <div class="p-3 bg-cream border border-ink-200 rounded-md">
+        <div class="text-xs uppercase tracking-wider text-ink-500 mb-1">ASP leaf index</div>
+        <div class="font-mono text-xs text-ink-900" id="asp-leaf-index-readout">--</div>
+      </div>
+      <div class="p-3 bg-cream border border-ink-200 rounded-md">
+        <div class="text-xs uppercase tracking-wider text-ink-500 mb-1">Created</div>
+        <div class="font-mono text-xs text-ink-900" id="org-created-at-readout">--</div>
+      </div>
+      <div class="p-3 bg-cream border border-ink-200 rounded-md">
+        <div class="text-xs uppercase tracking-wider text-ink-500 mb-1">Deploy tx</div>
+        <div class="font-mono text-xs text-gold-600" id="org-tx-hash-readout">--</div>
+      </div>
+    </div>
+
+    <div class="flex justify-end pt-2">
+      <button
+        type="button"
+        data-org-details-close
+        class="inline-flex items-center gap-2 bg-surface border border-ink-300 text-ink-700 hover:border-gold-500 hover:text-ink-900 text-sm font-medium rounded-md px-4 py-2 transition-colors focus:outline-none focus:ring-2 focus:ring-gold-500"
+      >Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enroll Agent modal -->
 <div
   id="enroll-modal"
   hidden
   role="dialog"
   aria-modal="true"
   aria-labelledby="enroll-modal-heading"
-  class="fixed inset-0 z-50 bg-dark-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+  class="modal-shell fixed inset-0 z-50 flex items-center justify-center p-4"
 >
-  <div class="bg-dark-900/95 border border-dark-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4">
-    <h2 id="enroll-modal-heading" class="text-sm uppercase tracking-[0.25em] text-brand-400 font-semibold">Enroll agent</h2>
+  <div class="modal-card animate-scale-in bg-surface border border-ink-200 rounded-xl p-6 w-full max-w-md flex flex-col gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-lg bg-gold-500/10 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+      </div>
+      <div>
+        <h2 id="enroll-modal-heading" class="font-headline text-xl text-ink-900">Enrol agent</h2>
+        <p class="text-sm text-ink-500 mt-0.5">Choose a memorable name. After enrolment you can export the package from the action card.</p>
+      </div>
+    </div>
     <div class="flex flex-col gap-2">
-      <label for="enroll-agent-name-input" class="text-xs text-dark-300">Agent name</label>
+      <label for="enroll-agent-name-input" class="text-xs uppercase tracking-wider text-ink-500">Agent name</label>
       <input
         id="enroll-agent-name-input"
         type="text"
         autocomplete="off"
         placeholder="e.g. trader-bot-1"
-        class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm font-mono text-dark-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
+        class="bg-surface border border-ink-300 rounded-md px-3 py-2 text-sm font-mono text-ink-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
       />
-      <div id="enroll-name-error" hidden class="text-xs text-rose-300"></div>
+      <div id="enroll-name-error" hidden class="text-xs text-red-700"></div>
     </div>
-    <div class="flex gap-3 justify-end">
-      <button
-        id="enroll-close-btn"
-        type="button"
-        class="bg-dark-800 border border-dark-700 rounded-lg text-sm font-semibold text-dark-50 px-4 py-2 hover:border-brand-500 hover:text-brand-400 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-      >Close</button>
-      <button
-        id="enroll-submit-btn"
-        type="button"
-        class="flex items-center gap-2 bg-brand-500 text-dark-950 rounded-lg text-sm font-semibold shadow-lg shadow-brand-500/20 px-4 py-2 hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-dark-950"
-      >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        <span id="enroll-submit-btn-text">Enroll &amp; Download Bundle</span>
-      </button>
+    <div class="flex items-center justify-between gap-3 pt-2">
+      <span class="text-[11px] text-ink-500 inline-flex items-center gap-1.5">
+        <kbd class="kbd">Esc</kbd> to close
+      </span>
+      <div class="flex gap-2">
+        <button
+          id="enroll-close-btn"
+          type="button"
+          class="btn-ghost focus-ring inline-flex items-center gap-2 border border-ink-300 text-ink-700 text-sm font-medium rounded-md px-4 py-2"
+        >Cancel</button>
+        <button
+          id="enroll-submit-btn"
+          type="button"
+          class="btn-primary focus-ring inline-flex items-center gap-2 text-white text-sm font-medium rounded-md px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span id="enroll-submit-btn-text">Enrol &amp; Download Bundle</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -325,10 +493,10 @@
 
 <!-- Toast Template -->
 <template id="tpl-toast">
-  <div class="toast flex items-center gap-3 px-4 py-3 bg-dark-800 border rounded-lg shadow-xl max-w-sm animate-slide-in" role="alert">
-    <svg class="toast-icon w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
-    <p class="toast-message flex-1 text-sm"></p>
-    <button type="button" class="toast-close p-1 text-dark-400 hover:text-dark-200 transition-colors" aria-label="Dismiss">
+  <div class="toast flex items-center gap-3 px-4 py-3 bg-surface border border-ink-200 rounded-md shadow-lg max-w-sm animate-slide-in" role="alert">
+    <svg class="toast-icon w-5 h-5 flex-shrink-0 text-ink-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
+    <p class="toast-message flex-1 text-sm text-ink-900"></p>
+    <button type="button" class="toast-close p-1 text-ink-500 hover:text-ink-900 transition-colors" aria-label="Dismiss">
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -336,19 +504,94 @@
 
 <!-- Agent Row Template -->
 <template id="tpl-agent-row">
-  <div class="flex items-center justify-between gap-3 p-3 bg-dark-800 border border-dark-700 rounded-lg">
-    <div class="flex flex-col gap-1 min-w-0">
-      <span class="font-mono text-xs text-dark-200 font-semibold truncate" data-agent-name></span>
-      <span class="text-[10px] text-dark-400" data-agent-when></span>
+  <div class="card-surface card-lift flex items-center justify-between gap-3 p-3 pl-4 bg-cream border border-ink-200 rounded-lg">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-8 h-8 rounded-full bg-gold-500/15 border border-gold-500/30 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-gold-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+      </div>
+      <div class="flex flex-col gap-0.5 min-w-0">
+        <span class="font-mono text-sm text-ink-900 font-semibold truncate" data-agent-name></span>
+        <span class="text-[11px] text-ink-500" data-agent-when></span>
+      </div>
     </div>
     <div class="flex items-center gap-2 flex-shrink-0">
-      <span class="font-mono text-[10px] text-dark-400" data-agent-pubkey></span>
-      <button type="button" class="copy-agent-key-btn p-1 text-dark-500 hover:text-brand-500 transition-colors" aria-label="Copy auth pubkey" title="Copy auth pubkey">
+      <span class="pill" style="font-family: var(--font-mono); font-size: 10px;">
+        <span class="pill-dot bg-emerald-500"></span>
+        <span data-agent-pubkey></span>
+      </span>
+      <button type="button" class="copy-agent-key-btn focus-ring p-1.5 text-ink-500 hover:text-gold-600 hover:bg-surface transition-colors rounded-md" aria-label="Copy auth pubkey" title="Copy auth pubkey">
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
       </button>
     </div>
   </div>
 </template>
+
+<script>
+  // Org details modal — additive, page-scoped (no JS module changes).
+  (function () {
+    const modal = document.getElementById('org-details-modal');
+    const open  = document.getElementById('org-details-btn');
+    const close = document.getElementById('org-details-close-btn');
+    const closeAlt = document.querySelector('[data-org-details-close]');
+    if (!modal) return;
+    const show = () => { modal.hidden = false; };
+    const hide = () => { modal.hidden = true; };
+    open?.addEventListener('click', show);
+    close?.addEventListener('click', hide);
+    closeAlt?.addEventListener('click', hide);
+    modal.addEventListener('click', (e) => { if (e.target === modal) hide(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.hidden) hide();
+    });
+  })();
+
+  // Hero stats — mirror values from dashboard tables and network chip.
+  (function () {
+    const heroBalance = document.getElementById('hero-treasury-value');
+    const heroAgents  = document.getElementById('hero-agents-value');
+    const heroNetwork = document.getElementById('hero-network-value');
+    const heroNetSub  = document.getElementById('hero-network-sub');
+    const balTable    = document.getElementById('dashboard-balance-table');
+    const agtTable    = document.getElementById('dashboard-agents-table');
+    const netChip     = document.getElementById('network-chip');
+    function pickBalance() {
+      if (!balTable) return null;
+      const rows = balTable.querySelectorAll('tbody tr');
+      for (const r of rows) {
+        const cells = r.querySelectorAll('td');
+        if (cells.length >= 2) {
+          const label = (cells[0].textContent || '').toLowerCase();
+          if (label.includes('treasury') || label.includes('balance') || label.includes('usdc')) {
+            return cells[cells.length - 1].textContent.trim();
+          }
+        }
+      }
+      const first = rows[0]?.querySelectorAll('td');
+      return first && first.length >= 2 ? first[first.length - 1].textContent.trim() : null;
+    }
+    function sync() {
+      if (heroBalance) {
+        const v = pickBalance();
+        heroBalance.textContent = v && v.length ? v : '--';
+      }
+      if (heroAgents && agtTable) {
+        const n = agtTable.querySelectorAll('tbody tr').length;
+        heroAgents.textContent = n > 0 ? String(n) : '--';
+      }
+      if (heroNetwork && netChip) {
+        const t = (netChip.textContent || '').trim();
+        heroNetwork.textContent = t && t !== 'No network' ? t : '--';
+        if (heroNetSub) heroNetSub.textContent = t === 'No network'
+          ? 'Connect Freighter to begin'
+          : 'Live · auto-refreshing';
+      }
+    }
+    if (balTable) new MutationObserver(sync).observe(balTable, { childList: true, subtree: true, characterData: true });
+    if (agtTable) new MutationObserver(sync).observe(agtTable, { childList: true, subtree: true, characterData: true });
+    if (netChip)  new MutationObserver(sync).observe(netChip,  { childList: true, characterData: true });
+    sync();
+  })();
+</script>
 
 <script src="/js/config.js"></script>
 <script type="module" src="/js/enclave/index.js"></script>
