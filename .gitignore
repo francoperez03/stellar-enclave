@@ -76,3 +76,11 @@ fixtures/*.secret.*
 # Node workspaces (Phase 0 scaffold)
 node_modules/
 **/tsconfig.tsbuildinfo
+
+# Dev-only artifacts synced by scripts/sync-app-dev-artifacts.sh
+app/js/prover.js
+app/js/prover_bg.wasm
+app/js/witness/witness.js
+app/js/witness/witness_bg.wasm
+app/circuits/
+app/keys/

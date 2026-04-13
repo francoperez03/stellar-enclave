@@ -6,6 +6,8 @@
   "scripts": {
     "build:css": "tailwindcss -i css/tailwind.src.css -o css/app.css",
     "dev:css": "tailwindcss -i css/tailwind.src.css -o css/app.css --watch",
+    "sync:dev-artifacts": "bash ../scripts/sync-app-dev-artifacts.sh",
+    "predev": "npm run sync:dev-artifacts",
     "dev": "python3 -m http.server 8080",
     "test": "jest",
     "test:e2e": "playwright test --config e2e/playwright.config.js",
