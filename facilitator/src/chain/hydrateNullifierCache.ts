@@ -22,6 +22,13 @@ export interface HydrateResult {
 }
 
 /**
+ * Maximum consecutive empty pages before we assume the scan window has no
+ * matching events and exit early. Prevents infinite pagination against an
+ * unused pool contract (RPC keeps advancing cursor even with zero results).
+ */
+const MAX_PAGES_WITHOUT_EVENTS = 20;
+
+/**
  * Scans Soroban events emitted by the pool contract over the configured
  * ledger window and rehydrates the NullifierCache with every nullifier that
  * has already been spent. Must be called once at boot before the facilitator
@@ -33,6 +40,7 @@ export interface HydrateResult {
 export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateResult> {
   const latest = await deps.rpc.getLatestLedger();
   const startLedger = Math.max(1, latest.sequence - deps.hydrateLedgers);
+  const endLedger = latest.sequence;
 
   const filter = {
     type: "contract" as const,
@@ -60,6 +68,7 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
   let cursor: string | undefined;
   let pagesScanned = 0;
   let hydratedCount = 0;
+  let consecutiveEmptyPages = 0;
   let isFirstCall = true;
   const pendingEntries: Array<{ nullifierHex: string; txHash: string; seenAt: number }> = [];
 
@@ -69,7 +78,12 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
       if (cursor) {
         page = await deps.rpc.getEvents({ cursor, filters: [filter], limit: 200 });
       } else {
-        page = await deps.rpc.getEvents({ startLedger: effectiveStartLedger, filters: [filter], limit: 200 });
+        page = await deps.rpc.getEvents({
+          startLedger: effectiveStartLedger,
+          endLedger,
+          filters: [filter],
+          limit: 200,
+        });
       }
     } catch (err) {
       const msg = (err as Error).message;
@@ -84,7 +98,12 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
         );
         effectiveStartLedger = oldestRetained;
         try {
-          page = await deps.rpc.getEvents({ startLedger: effectiveStartLedger, filters: [filter], limit: 200 });
+          page = await deps.rpc.getEvents({
+            startLedger: effectiveStartLedger,
+            endLedger,
+            filters: [filter],
+            limit: 200,
+          });
         } catch (retryErr) {
           throw new Error(
             `event scan failed at cursor=${cursor ?? "initial"}: ${(err as Error).message}`,
@@ -98,6 +117,8 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
     }
     isFirstCall = false;
     pagesScanned += 1;
+
+    const eventsInPage = page.events?.length ?? 0;
 
     for (const event of page.events ?? []) {
       try {
@@ -116,16 +137,48 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
       }
     }
 
-    cursor = page.cursor || undefined;
-    deps.logger?.info(
-      {
-        page: pagesScanned,
-        eventsInPage: page.events?.length ?? 0,
-        hydratedSoFar: hydratedCount,
-        nextCursor: cursor ? cursor.slice(0, 12) + "..." : null,
-      },
-      "nullifier cache page scanned",
-    );
+    // Throttle per-page logging: always log when there are events; otherwise
+    // log every 25th empty page only.
+    if (eventsInPage > 0 || pagesScanned % 25 === 0) {
+      cursor = page.cursor || undefined;
+      deps.logger?.info(
+        {
+          page: pagesScanned,
+          eventsInPage,
+          hydratedSoFar: hydratedCount,
+          nextCursor: cursor ? cursor.slice(0, 12) + "..." : null,
+        },
+        "nullifier cache page scanned",
+      );
+    } else {
+      cursor = page.cursor || undefined;
+    }
+
+    // Break early if the last event in this page is at or past endLedger —
+    // we've consumed everything within the intended scan window.
+    if (eventsInPage > 0) {
+      const lastEvent = page.events[eventsInPage - 1];
+      if (lastEvent.ledger >= endLedger) {
+        break;
+      }
+      // Reset empty-page counter when we see real events.
+      consecutiveEmptyPages = 0;
+    } else {
+      consecutiveEmptyPages += 1;
+      // Safety cap: if we've seen many consecutive empty pages and no events at all,
+      // the scan window almost certainly has no matching events (e.g., unused pool).
+      if (consecutiveEmptyPages >= MAX_PAGES_WITHOUT_EVENTS && hydratedCount === 0) {
+        deps.logger?.warn(
+          {
+            pagesScanned,
+            consecutiveEmptyPages,
+            endLedger,
+          },
+          "hydrateNullifierCache: RPC returned no events in consecutive empty pages — assuming scan window has no matching events; exiting hydration early",
+        );
+        break;
+      }
+    }
   } while (cursor);
 
   deps.cache.hydrate(pendingEntries);
