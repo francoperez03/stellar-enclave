@@ -42,9 +42,15 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
 
   const extractFn = deps.extractNullifiers ?? defaultExtractNullifiers;
 
+  // Resolve the effective startLedger, retrying once if the RPC rejects it due to
+  // retention drift (error contains "startLedger must be within the ledger range: A - B").
+  const RANGE_RE = /ledger range:\s*(\d+)\s*-\s*(\d+)/;
+  let effectiveStartLedger = startLedger;
+
   let cursor: string | undefined;
   let pagesScanned = 0;
   let hydratedCount = 0;
+  let isFirstCall = true;
   const pendingEntries: Array<{ nullifierHex: string; txHash: string; seenAt: number }> = [];
 
   do {
@@ -53,13 +59,34 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
       if (cursor) {
         page = await deps.rpc.getEvents({ cursor, filters: [filter], limit: 200 });
       } else {
-        page = await deps.rpc.getEvents({ startLedger, filters: [filter], limit: 200 });
+        page = await deps.rpc.getEvents({ startLedger: effectiveStartLedger, filters: [filter], limit: 200 });
       }
     } catch (err) {
-      throw new Error(
-        `event scan failed at cursor=${cursor ?? "initial"}: ${(err as Error).message}`,
-      );
+      const msg = (err as Error).message;
+      // On the initial (non-cursor) call, attempt a single retry if the RPC
+      // reports that our startLedger is outside its retention window.
+      if (isFirstCall && !cursor && RANGE_RE.test(msg)) {
+        const match = RANGE_RE.exec(msg);
+        const oldestRetained = parseInt(match![1], 10);
+        deps.logger?.warn(
+          { requestedStart: effectiveStartLedger, oldestRetained },
+          "hydrateNullifierCache: startLedger outside RPC retention window, retrying with oldest retained ledger",
+        );
+        effectiveStartLedger = oldestRetained;
+        try {
+          page = await deps.rpc.getEvents({ startLedger: effectiveStartLedger, filters: [filter], limit: 200 });
+        } catch (retryErr) {
+          throw new Error(
+            `event scan failed at cursor=${cursor ?? "initial"}: ${(err as Error).message}`,
+          );
+        }
+      } else {
+        throw new Error(
+          `event scan failed at cursor=${cursor ?? "initial"}: ${msg}`,
+        );
+      }
     }
+    isFirstCall = false;
     pagesScanned += 1;
 
     for (const event of page.events ?? []) {
@@ -87,7 +114,7 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
   return {
     hydratedCount,
     pagesScanned,
-    startLedger,
+    startLedger: effectiveStartLedger,
     latestLedger: latest.sequence,
   };
 }

@@ -145,4 +145,36 @@ describe("hydrateNullifierCache", () => {
     });
     expect(result.startLedger).toBe(150_000);
   });
+
+  it("retries with oldest retained ledger when RPC reports range-mismatch on first call", async () => {
+    const cache = new NullifierCache();
+    const warn = vi.fn();
+    const rangeError = new Error(
+      "startLedger must be within the ledger range: 381040 - 500000",
+    );
+    const getEvents = vi.fn()
+      .mockRejectedValueOnce(rangeError)
+      .mockResolvedValueOnce({
+        events: [{ value: {}, transactionHash: "tx_retry" }],
+        cursor: undefined,
+      });
+    const rpc = {
+      getLatestLedger: vi.fn().mockResolvedValue({ sequence: 500_000 }),
+      getEvents,
+    };
+    const result = await hydrateNullifierCache({
+      rpc: rpc as any,
+      cache,
+      poolContractId: "CPOOL",
+      hydrateLedgers: 120_000, // would compute startLedger=380_000, inside drift
+      logger: { warn, info: vi.fn(), error: vi.fn() } as any,
+      extractNullifiers: () => ["aa"],
+    });
+    expect(result.hydratedCount).toBe(1);
+    expect(result.startLedger).toBe(381040); // bumped to oldest retained
+    expect(warn).toHaveBeenCalledOnce();
+    // Second getEvents call must use the bumped startLedger
+    expect(getEvents).toHaveBeenCalledTimes(2);
+    expect(getEvents.mock.calls[1][0]).toMatchObject({ startLedger: 381040 });
+  });
 });

@@ -91,7 +91,7 @@ function parse(): ParsedEnv {
     keyPath: resolvePathFromRepoRoot(readString("FACILITATOR_KEY_PATH")),
     minXlmStroops: readBigint("FACILITATOR_MIN_XLM_STROOPS", 50_000_000n),
     maxTransactionFeeStroops: readInt("FACILITATOR_MAX_TX_FEE_STROOPS", 10_000_000),
-    cacheHydrateLedgers: readInt("FACILITATOR_HYDRATE_LEDGERS", 120_960),
+    cacheHydrateLedgers: readInt("FACILITATOR_HYDRATE_LEDGERS", 119_000),
     circuitVkeyPath: resolvePathFromRepoRoot(readString("FACILITATOR_VKEY_PATH", "wallets/circuits/transact2.vkey.json")),
     logLevel: readString("LOG_LEVEL", "info"),
     settlementsPath: resolvePathFromRepoRoot(readString("FACILITATOR_SETTLEMENTS_PATH", "./data/settlements.jsonl")),
