@@ -84,3 +84,4 @@ app/js/witness/witness.js
 app/js/witness/witness_bg.wasm
 app/circuits/
 app/keys/
+proving-artifacts/

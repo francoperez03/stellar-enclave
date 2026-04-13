@@ -32,7 +32,7 @@ export ENCLAVE_REPO_PATH="\${ENCLAVE_REPO_PATH:-${REPO_PATH_DEFAULT}}"
 # Paths (override via env if needed)
 export ENCLAVE_BUNDLE_PATH="$PWD/bundle.json"
 export ENCLAVE_NOTES_PATH="$PWD/notes.json"
-export ENCLAVE_PROVING_ARTIFACTS_PATH="\${ENCLAVE_PROVING_ARTIFACTS_PATH:-$ENCLAVE_REPO_PATH/dist}"
+export ENCLAVE_PROVING_ARTIFACTS_PATH="\${ENCLAVE_PROVING_ARTIFACTS_PATH:-$ENCLAVE_REPO_PATH/proving-artifacts}"
 
 # Service URLs (override via env if deploying elsewhere)
 export FACILITATOR_URL="\${FACILITATOR_URL:-${facilitatorUrl}}"

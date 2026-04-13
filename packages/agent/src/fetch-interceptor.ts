@@ -303,9 +303,10 @@ export async function createInterceptingFetch(
         proveResult = await proverDeps.prove(prover, JSON.stringify(witnessInputs));
         spentNullifiers.add(note.nullifier);
         log.info({ orgId: bundle.orgId, url, phase: 'prove' }, 'proof generated');
-      } catch {
-        log.error({ orgId: bundle.orgId, url, phase: 'prove' }, 'proof generation failed');
-        throw new EnclavePaymentError({ reason: 'proof_failed' });
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        log.error({ orgId: bundle.orgId, url, phase: 'prove', err: detail }, 'proof generation failed');
+        throw new EnclavePaymentError({ reason: 'proof_failed', detail });
       }
 
       proofPayload = {

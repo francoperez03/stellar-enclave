@@ -64,17 +64,20 @@ export class EnclavePaymentError extends Error {
   reason: 'proof_failed' | 'facilitator_rejected' | 'no_funds' | 'retry_402' | 'already_spent';
   nullifier?: string;
   facilitatorResponse?: unknown;
+  detail?: string;
 
   constructor(opts: {
     reason: EnclavePaymentError['reason'];
     nullifier?: string;
     facilitatorResponse?: unknown;
+    detail?: string;
   }) {
-    super(`EnclavePaymentError: ${opts.reason}`);
+    super(`EnclavePaymentError: ${opts.reason}${opts.detail ? ` — ${opts.detail}` : ''}`);
     this.name = 'EnclavePaymentError';
     this.reason = opts.reason;
     this.nullifier = opts.nullifier;
     this.facilitatorResponse = opts.facilitatorResponse;
+    this.detail = opts.detail;
   }
 }
 
