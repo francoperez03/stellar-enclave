@@ -3,11 +3,5 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm install",
-  "env": {
-    "NEXT_PUBLIC_CONSOLE_URL": "@enclave-console-url",
-    "NEXT_PUBLIC_YOUTUBE_VIDEO_ID": "@enclave-youtube-id",
-    "NEXT_PUBLIC_GITHUB_URL": "@enclave-github-url",
-    "NEXT_PUBLIC_DORAHACKS_URL": "@enclave-dorahacks-url"
-  }
+  "installCommand": "npm install"
 }
