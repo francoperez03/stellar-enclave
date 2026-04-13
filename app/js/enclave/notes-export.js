@@ -22,6 +22,14 @@ import { listNoteTags } from './registry.js';
 import { computeEnclaveAspLeaf } from './keys.js';
 import { bytesToBigIntLE } from '../bridge.js';
 
+/** BN254 scalar field modulus. All circuit inputs must be strictly less. */
+const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+
+function modField(value) {
+    const v = typeof value === 'bigint' ? value : BigInt(value);
+    return ((v % BN254_MODULUS) + BN254_MODULUS) % BN254_MODULUS;
+}
+
 /**
  * Slice a concatenated Uint8Array into `count` 32-byte little-endian field
  * elements, returned as decimal strings — the shape the circuit + agent
@@ -92,14 +100,15 @@ export async function exportEnclaveNotes({
 
     // ASP data is org-scoped — one computation for all notes.
     const aspLeafBytes = computeEnclaveAspLeaf(orgSpendingPubKey);
-    const aspLeafDecimal = bytesToBigIntLE(aspLeafBytes).toString();
+    const aspLeafDecimal = modField(bytesToBigIntLE(aspLeafBytes)).toString();
 
     const aspProof = await stateManager.getASPMembershipProof(aspLeafIndex);
     if (!aspProof) {
         throw new Error(`ASP membership proof unavailable for leaf index ${aspLeafIndex}`);
     }
-    const aspPathElements = sliceFieldElementsDecimal(aspProof.path_elements, treeDepth);
-    const aspPathIndex    = bytesToBigIntLE(aspProof.path_indices).toString();
+    const aspPathElements = sliceFieldElementsDecimal(aspProof.path_elements, treeDepth)
+        .map((s) => modField(s).toString());
+    const aspPathIndex    = modField(bytesToBigIntLE(aspProof.path_indices)).toString();
 
     const out = [];
     for (const note of userNotes) {
@@ -117,19 +126,23 @@ export async function exportEnclaveNotes({
             console.warn(`[notes-export] pool proof missing for leafIndex ${note.leafIndex} — skipping`);
             continue;
         }
-        const pathElements = sliceFieldElementsDecimal(poolProof.path_elements, treeDepth);
-        const pathIndex    = bytesToBigIntLE(poolProof.path_indices).toString();
+        const pathElements = sliceFieldElementsDecimal(poolProof.path_elements, treeDepth)
+            .map((s) => modField(s).toString());
+        const pathIndex    = modField(bytesToBigIntLE(poolProof.path_indices)).toString();
 
-        // commitment: stored as hex in user_notes (.id); convert to decimal for the agent.
-        const commitmentDecimal = bytesToBigIntLE(hexToBytes(note.id)).toString();
+        // commitment: stored as BIG-endian hex in user_notes (.id from bigint.toString(16) padStart 64).
+        // Parse via BigInt('0x...') (NOT bytesToBigIntLE which would byte-reverse) and reduce mod p.
+        const commitmentDecimal = modField(BigInt(note.id.startsWith('0x') ? note.id : '0x' + note.id)).toString();
 
-        // blinding: stored hex in user_notes; convert to decimal for the agent.
-        const blindingDecimal = bytesToBigIntLE(hexToBytes(note.blinding)).toString();
+        // blinding: stored as LE hex in user_notes (bigintToField → bytesToHex preserves LE order).
+        // bytesToBigIntLE roundtrips correctly. Still reduce mod p defensively — the source blinding
+        // may have been a raw 32-byte random before any modular reduction.
+        const blindingDecimal = modField(bytesToBigIntLE(hexToBytes(note.blinding))).toString();
 
         out.push({
             commitment:       commitmentDecimal,
-            nullifier:        tag.nullifier, // already decimal string from Phase 05-02
-            amount:           String(note.amount), // EnclaveNote.amount is bigint; JSON.stringify below handles it via BigInt→string fallback
+            nullifier:        modField(tag.nullifier).toString(), // decimal string from Phase 05-02 — reduce defensively
+            amount:           String(note.amount),
             blinding:         blindingDecimal,
             pathElements,
             pathIndex,
