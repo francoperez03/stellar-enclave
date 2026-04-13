@@ -34,6 +34,7 @@ import {
     listAgents,
     putNoteTag,
     listNoteTags,
+    getNoteTagByNullifier,
 } from '../../enclave/registry.js';
 import { deleteDatabase, openDatabase, DB_VERSION } from '../../state/db.js';
 
@@ -49,10 +50,11 @@ afterAll(async () => {
 
 describe('Registry — enclave_orgs CRUD', () => {
     test('db_upgradesTo_v6', async () => {
-        // Simple sanity check — opening the DB must succeed and report v6.
+        // Simple sanity check — opening the DB must succeed and report the current version.
+        // Plan 05-02 bumped DB_VERSION from 6 to 7 (added by_nullifier index).
         const db = await openDatabase();
         expect(db.version).toBe(DB_VERSION);
-        expect(db.version).toBe(6);
+        expect(db.version).toBe(7);
         // All three new stores must be present.
         expect(db.objectStoreNames.contains('enclave_orgs')).toBe(true);
         expect(db.objectStoreNames.contains('enclave_agents')).toBe(true);
@@ -250,5 +252,51 @@ describe('Registry — enclave_note_tags CRUD', () => {
         expect(c2).toHaveLength(1);
         expect(c1.map(r => r.commitment).sort()).toEqual(['0xa', '0xb']);
         expect(c2[0].commitment).toBe('0xc');
+    });
+});
+
+// ============================================================================
+// Plan 05-02 Task 1 — nullifier column + by_nullifier index + getNoteTagByNullifier
+// ============================================================================
+
+describe('putNoteTag + getNoteTagByNullifier (Plan 05-02)', () => {
+    test('putNoteTag accepts row with optional nullifier', async () => {
+        const row = { commitment: '0xabc', orgId: 'org-a', ledger: 0, amount: '10', nullifier: '11111' };
+        await putNoteTag(row);
+
+        const tags = await listNoteTags('org-a');
+        expect(tags).toHaveLength(1);
+        expect(tags[0].nullifier).toBe('11111');
+    });
+
+    test('putNoteTag still works without nullifier', async () => {
+        const row = { commitment: '0xdef', orgId: 'org-a', ledger: 0, amount: '5' };
+        await putNoteTag(row);
+
+        const tags = await listNoteTags('org-a');
+        expect(tags).toHaveLength(1);
+        expect(tags[0].nullifier).toBeUndefined();
+    });
+
+    test('getNoteTagByNullifier returns the matching row', async () => {
+        await putNoteTag({ commitment: '0x1001', orgId: 'org-b', ledger: 0, amount: '10', nullifier: '1001' });
+        await putNoteTag({ commitment: '0x1002', orgId: 'org-b', ledger: 0, amount: '20', nullifier: '1002' });
+
+        const found = await getNoteTagByNullifier('1002');
+        expect(found).toBeDefined();
+        expect(found.commitment).toBe('0x1002');
+        expect(found.nullifier).toBe('1002');
+
+        const notFound = await getNoteTagByNullifier('9999');
+        expect(notFound).toBeUndefined();
+    });
+
+    test('getNoteTagByNullifier ignores rows with no nullifier', async () => {
+        await putNoteTag({ commitment: '0x2002', orgId: 'org-c', ledger: 0, amount: '10', nullifier: '2002' });
+        await putNoteTag({ commitment: '0x2003', orgId: 'org-c', ledger: 0, amount: '10' }); // no nullifier
+
+        // IndexedDB cannot key-lookup by undefined — should return undefined
+        const result = await getNoteTagByNullifier(undefined);
+        expect(result).toBeUndefined();
     });
 });

@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = 'poolstellar';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 /**
  * Store configuration for IndexedDB schema.
@@ -54,9 +54,16 @@ const STORES = {
             { name: 'by_agentName', keyPath: 'agentName' }
         ]
     },
+    // Plan 05-02: added by_nullifier index (non-unique to tolerate legacy rows
+    // with no nullifier column). DB_VERSION bumped 6 -> 7; the existing
+    // onupgradeneeded !contains() guard creates the index additively without
+    // touching any other store or existing data.
     enclave_note_tags: {
         keyPath: 'commitment',
-        indexes: [{ name: 'by_orgId', keyPath: 'orgId' }]
+        indexes: [
+            { name: 'by_orgId',     keyPath: 'orgId'     },
+            { name: 'by_nullifier', keyPath: 'nullifier' }
+        ]
     }
 };
 

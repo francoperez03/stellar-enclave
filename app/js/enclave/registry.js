@@ -128,7 +128,7 @@ export async function listAgents(orgId) {
 /**
  * Upsert a note-tag row. Idempotent — replaying the same commitment row is safe.
  *
- * @param {{ commitment: string, orgId: string, ledger: number, amount: string }} row
+ * @param {{ commitment: string, orgId: string, ledger: number, amount: string, nullifier?: string }} row
  * @returns {Promise<void>}
  */
 export async function putNoteTag(row) {
@@ -153,4 +153,20 @@ export async function listNoteTags(orgId) {
     const store = tx(db, [NOTE_TAGS_STORE], 'readonly').objectStore(NOTE_TAGS_STORE);
     const index = store.index('by_orgId');
     return promisifyRequest(index.getAll(orgId));
+}
+
+/**
+ * Fetch the note-tag row matching the given nullifier (decimal bigint string).
+ * Returns undefined if no row is indexed under that nullifier.
+ * @param {string} nullifier
+ * @returns {Promise<Object|undefined>}
+ */
+export async function getNoteTagByNullifier(nullifier) {
+    if (nullifier === undefined || nullifier === null) {
+        return undefined;
+    }
+    const db = await openDatabase();
+    const store = tx(db, [NOTE_TAGS_STORE], 'readonly').objectStore(NOTE_TAGS_STORE);
+    const index = store.index('by_nullifier');
+    return promisifyRequest(index.get(nullifier));
 }
