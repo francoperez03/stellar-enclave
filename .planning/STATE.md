@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 03-agent-sdk-enclave-agent
-current_plan: Not started
-status: planning
-stopped_at: Completed 05-07-PLAN.md (PARTIAL — Tasks 1-3 deferred to recording-day pre-flight)
-last_updated: "2026-04-13T01:42:04.536Z"
+current_phase: 06-demo-recording-submission
+current_plan: Franco-scope pending (record rehearsal + final, upload YouTube, publish DoraHacks)
+status: staged-for-franco
+stopped_at: Phase 6 agent-scope closed on 2026-04-12 — 4 plans staged, 3 Franco sessions remaining per FRANCO-CHECKLIST.md
+last_updated: "2026-04-12T22:45:00-03:00"
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 36
-  completed_plans: 32
+  completed_plans: 36
 ---
 
 # Session State
@@ -23,19 +23,23 @@ See: .planning/PROJECT.md
 ## Position
 
 **Milestone:** v1.0 milestone
-**Current phase:** 03-agent-sdk-enclave-agent
-**Current Plan:** Not started
-**Total Plans in Phase:** 5
-**Status:** Ready to plan
+**Current phase:** 06-demo-recording-submission
+**Current Plan:** Franco-scope pending (rehearsal, final, YouTube, DoraHacks)
+**Total Plans in Phase:** 4
+**Status:** Agent-scope complete 2026-04-12 — Franco executes 3 sessions per FRANCO-CHECKLIST.md
 
 ## Progress
 
 Phase 00-setup-day-1-de-risking: [██████████] 100% (5/5 plans) ✓
 Phase 01-pool-integration-multi-org-namespace: [██████████] 100% (4/4 plans) ✓
 Phase 02-facilitator-bridge: [██████████] 100% (8/8 plans) ✓
-Phase 03-agent-sdk-enclave-agent: [████░░░░░░] 40% (2/5 plans)
+Phase 03-agent-sdk-enclave-agent: [██████████] 100% (5/5 plans) ✓
+Phase 03.1-agent-wire-format-fix: [██████████] 100% (1/1 plans) ✓
+Phase 04-enclave-gate-middleware-gated-endpoint: [██████████] 100% (2/2 plans) ✓
+Phase 05-dashboard-ops-hardening: [██████████] 100% (7/7 plans) ✓
+Phase 06-demo-recording-submission: [██████████] 100% (4/4 plans, agent-scope closed; 3 Franco sessions pending)
 
-Overall milestone: 3/7 phases complete, 20/24 plans complete.
+Overall milestone: 7/8 phases complete (all except live-submission human actions), 36/36 plans staged.
 
 ## Performance Metrics
 
@@ -172,6 +176,10 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 05-06]: DASH-02 isolation: null orgId short-circuit + by_nullifier miss drops cross-org settlements; facilitator stays org-blind (D4)
 - [Phase 05-06]: Privkey: type=password input, no sessionStorage/localStorage writes, no logging — demo-honest owner-local posture
 - [Phase 05-dashboard-ops-hardening]: Plan 05-07 closed as PARTIAL by user request — Tasks 1–3 (SDK capture-mode dry run, live preflight full-check, DASH-02 cross-org isolation) deferred to Franco's recording-day pre-flight outside the GSD flow. Task 4 (README/RUNBOOK claim hygiene) PASS. Commands captured in .planning/phases/05-dashboard-ops-hardening/05-07-VERIFICATION.md. demo/fixtures/demo-endpoint.json NOT created by this plan — it is Task 1's live-run output.
+- [Phase 06-01]: Architecture PNG produced programmatically (SVG + rsvg-convert, 1920×1080, 132 KB) instead of via CapCut — authorized under "hace todo lo que vos puedas hacer como agente" directive. SVG is source of truth at docs/enclave-architecture.svg; regenerate with `rsvg-convert -w 1920 -h 1080 docs/enclave-architecture.svg -o docs/enclave-architecture.png`. Franco may replace with a CapCut export later (same file path).
+- [Phase 06-04]: DEMO-SCRIPT.md baseline drifted 5 → 6 (line 189 self-check entry "El guion nunca claim per-org ASPs..." added after plan-writing). All 6 hits still inside ## Checklist Final de Cumplimiento NOT-claiming context. `scripts/check-claim-hygiene.sh` expects 6, not 5.
+- [Phase 06]: `.planning/` is gitignored per project convention (00-01 decision); Phase 6 DoraHacks writeup + form + SUMMARY files + FRANCO-CHECKLIST committed via `--allow-empty` empty commits preserving the atomic-per-task audit trail. Agent artifacts (scripts, PNG/SVG, YOUTUBE-UPLOAD.txt in demo/final/) are tracked normally.
+- [Phase 06]: One helper script per URL substitution (`substitute-video-url.sh`, `substitute-dorahacks-url.sh`) instead of one combined flag-driven script — each is atomic, has single-URL responsibility, and separates YouTube-format validation (regex only; YouTube returns 200 for any shape) from DoraHacks-format validation (regex + curl HEAD live-reachability).
 
 ## Blockers
 
@@ -187,13 +195,14 @@ None.
 - 2026-04-11: Completed 01-01-PLAN.md (deploy-admin-gate: Branch B fresh redeploy + POOL-06/07 wiring + preflight + seeder) — ~50 min, 3 tasks, 3 commits (`ce7154d`, `05c5ac2`, `5744342`). POOL-01 + POOL-05 + POOL-06 + POOL-07 GREEN. Fresh deploy under mikey (pool=`CBTP7PJJ...`, asp-m=`CCH2FMMQ...`, asp-nm=`CCUT3PSE...`, verifier=`CBV7OHVP...`). AdminInsertOnly=false verified by invoke exit code. Empty SMT root captured = `"0"`. `scripts/preflight.sh pool-ttl-bump` wraps extend for all 4 contracts (default 535680 ledgers / ~30d). `scripts/seed-demo-accounts.sh` generated fresh `user` identity (`GAJXKNJC...`), friendbot-funded, USDC classic trustlines ensured on both mikey + user. mikey has 0 USDC (Circle web-faucet drip pending before recording day). Ready for 01-02.
 - 2026-04-12: Completed 03-02-PLAN.md (config loader + pino logger — SDK-05 + SDK-06) — ~2 min, 2 tasks, 3 commits (`593ecfb` Task 1 inherited from prior session, `8fc22c9` Task 2 RED failing tests, `79d5e43` Task 2 GREEN pino impl). 7/7 logger redaction assertions pass GREEN covering orgSpendingPrivKey/agentAuthKey/proof.a-c/inputNullifiers/extData. Locked redact paths array (11 entries) with wildcard + nested variants. Next: 03-03 (WASM prover wrapper — RED already committed in `320b3f7`).
 - 2026-04-12: Completed 03-03-PLAN.md (WASM prover wrapper — SDK-02/03/04) — 4 min, 1 task, 1 housekeeping commit (`d1da192` remove orphan vitest.config.ts). GREEN-first TDD: prover.ts implementation was pre-committed in `29a94e0` (labeled "Plan 03-01 stubs" but contained full impl); RED tests in `320b3f7` pre-satisfied; test infra realigned in `4f1eb40` (NODE_OPTIONS=--experimental-vm-modules + @jest/globals). 6/6 prover tests pass (5 mock unit + 1 env-gated live smoke). Ready for 03-04 (witness inputs / Model X shared key) and 03-05 (createAgent + fetch interceptor + note selector wiring).
+- 2026-04-12: **Phase 6 agent-scope closed** — 06-01 complete (README Testnet Contracts table via `scripts/render-contracts-table.sh`, architecture PNG via SVG→rsvg-convert, VIDEO_URL + DORAHACKS_URL placeholder slots; 3 commits `c997b56`/`fd1bc44`/`78ca763`). 06-02 T2 complete (`.planning/hackathon/DORAHACKS-WRITEUP.md` drafted with Franco opener + PAS arc + contracts table; commit `8f3ecfb`); T1 rehearsal is Franco-scope. 06-03 staged (`scripts/substitute-video-url.sh`, `demo/final/YOUTUBE-UPLOAD.txt`; commit `077697c`); both tasks are Franco-scope (record + upload). 06-04 staged (`scripts/run-final-preflight.sh` with dry-run log captured, `scripts/check-claim-hygiene.sh` passing green, `scripts/substitute-dorahacks-url.sh`, `.planning/hackathon/DORAHACKS-FORM.md`; commits `87cafaf`/`3d9704c`/`f76ee47`); T3 DoraHacks publish is Franco-scope. Handoff bundle: `.planning/phases/06-demo-recording-submission/FRANCO-CHECKLIST.md` + 4 per-plan SUMMARY.md files (commit `1bf8af3`).
 
 ## Session
 
-**Last session:** 2026-04-13T01:34:19.333Z
-**Stopped at:** Completed 05-07-PLAN.md (PARTIAL — Tasks 1-3 deferred to recording-day pre-flight)
-**Resume file:** None
-**Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).
+**Last session:** 2026-04-12T22:45:00-03:00
+**Stopped at:** Phase 6 agent-scope complete — Franco executes 3 sessions per FRANCO-CHECKLIST.md
+**Resume file:** .planning/phases/06-demo-recording-submission/FRANCO-CHECKLIST.md
+**Next action:** Franco — 2026-04-15 AM run §1 (Day 5 rehearsal). Then §3 (Day 6 final), §4 (YouTube upload + `./scripts/substitute-video-url.sh`), §5-7 on 2026-04-17 (preflight + claim-hygiene + DoraHacks publish + `./scripts/substitute-dorahacks-url.sh`).
 
 ## Accumulated Context
 
