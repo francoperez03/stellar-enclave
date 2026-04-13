@@ -158,12 +158,15 @@ describe('depositForOrg — Plan 05-02 nullifier wiring', () => {
             signerOptions: signerOpts(),
         });
 
-        const expectedNullifier = expectedNullifierDecimal();
-        const row = await getNoteTagByNullifier(expectedNullifier);
-        expect(row).toBeDefined();
-        // The commitment stored must be the hex-normalized output_commitment0
+        // Phase 6: deposit writes BOTH a real tag and a zero-amount change tag.
+        // The mock's compute_nullifier returns a constant so tags can't be found
+        // via by_nullifier lookup; index directly via orgId + amount filter.
+        const tags = await listNoteTags('org-05-test');
+        const realTag = tags.find((t) => t.amount !== '0');
+        expect(realTag).toBeDefined();
         const commitmentHex = '0x' + OUTPUT_COMMITMENT0.toString(16).padStart(64, '0');
-        expect(row.commitment).toBe(commitmentHex);
+        expect(realTag.commitment).toBe(commitmentHex);
+        expect(typeof realTag.nullifier).toBe('string');
     });
 
     test('depositForOrg skips putNoteTag on submitDeposit failure', async () => {
@@ -204,12 +207,19 @@ describe('depositForOrg — Plan 05-02 nullifier wiring', () => {
             signerOptions: signerOpts(),
         });
 
+        // Phase 6 agent-spend bridge: deposit tags BOTH the real output and
+        // the zero-amount change output so the agent has a distinct null slot.
+        // The mock's compute_nullifier returns a constant, so both tags share
+        // the same nullifier string in tests — the real-WASM path produces
+        // distinct nullifiers by construction (different commitments).
         const tags = await listNoteTags('org-05-test');
-        expect(tags).toHaveLength(1);
+        expect(tags).toHaveLength(2);
 
-        const nullifier = tags[0].nullifier;
-        expect(typeof nullifier).toBe('string');
-        expect(nullifier).not.toBe('');
-        expect(nullifier).toMatch(/^[0-9]+$/);
+        const realTag = tags.find((t) => t.amount !== '0');
+        const changeTag = tags.find((t) => t.amount === '0');
+        expect(realTag).toBeDefined();
+        expect(changeTag).toBeDefined();
+        expect(typeof realTag.nullifier).toBe('string');
+        expect(realTag.nullifier).toMatch(/^[0-9]+$/);
     });
 });

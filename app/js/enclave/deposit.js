@@ -134,6 +134,15 @@ export async function depositForOrg(params = {}) {
     // blinding at lines 626-629 (createOutput(0n, pubKeyBytes, dummyBlinding)).
     // NEVER pass 0n here — Gotcha 5.
     const output0Blinding = bytesToBigIntLE(generateBlinding());
+    // Phase 6 — agent spend requires 2 distinct input notes for its circuit
+    // (null slot + real slot). If we let transaction-builder auto-pad
+    // outputs[1] with a random dummy blinding (lines 626-629 there), that
+    // blinding is never returned and the zero-amount change note becomes
+    // unspendable — the agent would reuse the real note as its null slot,
+    // producing identical input nullifiers → facilitator 409 (already_spent).
+    // Explicitly supply outputs[1] with our own blinding so we can persist
+    // it to user_notes alongside outputs[0].
+    const output1Blinding = bytesToBigIntLE(generateBlinding());
 
     const outputs = [
         {
@@ -141,6 +150,12 @@ export async function depositForOrg(params = {}) {
             recipientPubKey:        keys.orgSpendingPubKey,
             recipientEncryptionKey: keys.orgEncryptionKeypair.publicKey,
             blinding:               output0Blinding,
+        },
+        {
+            amount:                 0n,
+            recipientPubKey:        keys.orgSpendingPubKey,
+            recipientEncryptionKey: keys.orgEncryptionKeypair.publicKey,
+            blinding:               output1Blinding,
         },
     ];
 
@@ -215,6 +230,23 @@ export async function depositForOrg(params = {}) {
         nullifier:  nullifierDecimal,   // Plan 05-02 — decimal bigint string, same form as ShieldedProofWireFormat.inputNullifiers[]
     });
 
+    // Phase 6 — also tag the zero-amount change note (output_commitment1) so
+    // the agent SDK has a distinct null slot to pair with the real note.
+    // Without this, the agent reuses the real note for both circuit slots
+    // and the facilitator 409s on duplicate nullifiers.
+    const commitment1Hex = commitmentToHex(proofResult.sorobanProof.output_commitment1);
+    const commitment1Bytes = bigintToField(proofResult.sorobanProof.output_commitment1);
+    const signature1Bytes  = computeSignature(keys.orgSpendingPrivKey, commitment1Bytes, pathIndicesBytes);
+    const nullifier1Bytes  = computeNullifier(commitment1Bytes, pathIndicesBytes, signature1Bytes);
+    const nullifier1Decimal = bytesToBigIntLE(nullifier1Bytes).toString();
+    await putNoteTag({
+        commitment: commitment1Hex,
+        orgId:      org.orgId,
+        ledger:     0,
+        amount:     '0',
+        nullifier:  nullifier1Decimal,
+    });
+
     // Phase 6 / agent-spend bridge — persist the full private data to
     // `user_notes` so the agent SDK's loadNotes() path can read it. The
     // enclave deposit flow stores only the lightweight cross-ref tag in
@@ -232,15 +264,26 @@ export async function depositForOrg(params = {}) {
         // getPoolNextIndex() returns a BigInt from the WASM merkle tree — coerce
         // to Number so saveNote stores a plain integer that the WASM get_proof
         // binding will later accept (it rejects BigInt args).
-        const myLeafIndex = myLeafIndexBeforeSubmit != null
+        const leafIndex0 = myLeafIndexBeforeSubmit != null
             ? Number(myLeafIndexBeforeSubmit)
             : 0;
+        const leafIndex1 = leafIndex0 + 1; // outputs[1] always lands at next slot
         await stateManager?.saveNote?.({
             commitment: commitment0Hex,
             privateKey: keys.orgSpendingPrivKey,
-            blinding:   bigintToField(output0Blinding), // bytes — saveNote normalizes to hex
+            blinding:   bigintToField(output0Blinding),
             amount:     amountStroops,
-            leafIndex:  myLeafIndex,
+            leafIndex:  leafIndex0,
+            ledger:     0,
+            owner:      adminAddress,
+        });
+        // Zero-amount change note — becomes the agent's null slot at spend time.
+        await stateManager?.saveNote?.({
+            commitment: commitment1Hex,
+            privateKey: keys.orgSpendingPrivKey,
+            blinding:   bigintToField(output1Blinding),
+            amount:     0n,
+            leafIndex:  leafIndex1,
             ledger:     0,
             owner:      adminAddress,
         });

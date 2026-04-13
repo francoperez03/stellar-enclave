@@ -390,14 +390,17 @@ describe('depositForOrg — ORG-03 + POOL-02 invariants', () => {
         expect(result.commitments.length).toBeGreaterThanOrEqual(1);
 
         const tags = await listNoteTags('org-gdepos-aaaabbbb');
-        expect(tags.length).toBeGreaterThanOrEqual(1);
+        // Phase 6 agent-spend bridge: expect 2 tags (real + zero-amount change).
+        expect(tags.length).toBe(2);
 
-        // All persisted tags must carry the amount and orgId.
         for (const tag of tags) {
             expect(tag.orgId).toBe('org-gdepos-aaaabbbb');
-            expect(tag.amount).toBe((100_0000000n).toString());
             expect(typeof tag.commitment).toBe('string');
         }
+        const realTag = tags.find((t) => t.amount === (100_0000000n).toString());
+        const changeTag = tags.find((t) => t.amount === '0');
+        expect(realTag).toBeDefined();
+        expect(changeTag).toBeDefined();
     });
 
     test('depositForOrg_neverCallsCallPoolTransact', () => {
