@@ -1,0 +1,42 @@
+YOUTUBE UPLOAD — COPY-PASTE BUNDLE
+===================================
+
+Where to upload:   https://studio.youtube.com → Create → Upload videos
+What to upload:    demo/final/day-6-final.mp4   (or demo/backups/day-5-rehearsal.mp4 if fallback)
+Visibility:        UNLISTED (NOT Public, NOT Private)
+Category:          Science & Technology
+Language:          English
+Thumbnail:         CapCut default OR a still frame from the 0:50 architecture shot
+
+---[ TITLE — paste verbatim ]---
+
+Enclave — Shielded Organizations for Agentic Commerce (Stellar Agentic Hackathon 2026)
+
+---[ DESCRIPTION — paste verbatim (markdown renders in YouTube as plain text) ]---
+
+Enclave is shielded organizations for agentic commerce on Stellar.
+
+One shared on-chain anonymity set Soroban pool + per-org policy enforced off-chain by a facilitator. Three rival quant funds (Northfield Capital, Ashford Partners, Bayridge Capital) share one shielded pool; agents pay x402-gated APIs via shielded proofs; the facilitator relays real testnet USDC to endpoints unchanged.
+
+Hackathon submission — testnet only, proof of concept, not audited.
+
+Repo: https://github.com/francoperez03/stellar-enclave
+Upstream (Apache 2.0): https://github.com/NethermindEth/stellar-private-payments
+DoraHacks submission: (published 2026-04-17)
+
+---[ AFTER YOU CLICK PUBLISH ]---
+
+1. Copy the URL from the Studio share panel. Prefer the long form:
+       https://www.youtube.com/watch?v=XXXXXXXXXXX
+
+2. Verify it resolves in an incognito window (unlisted = anyone with link).
+
+3. From the repo root, run:
+       ./scripts/substitute-video-url.sh "https://www.youtube.com/watch?v=XXXXXXXXXXX"
+
+   That script will:
+     - replace <!-- VIDEO_URL --> in README.md
+     - replace <!-- VIDEO_URL --> in .planning/hackathon/DORAHACKS-WRITEUP.md
+     - update demo/final/day-6-final-meta.txt 'youtube_url:' line
+     - re-run the DEMO-06 forbidden-phrase grep
+     - stage + commit the result atomically
