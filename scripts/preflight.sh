@@ -80,9 +80,27 @@ cmd_pool_ttl_bump() {
     [[ -n "$id" && "$id" != "null" ]] || die "missing contract id in deployments.json"
   done
 
+  # deployments.json stores the deployer as a raw G... public key, but
+  # `stellar contract extend --source-account` expects a key alias that the
+  # stellar CLI can sign with. Resolve the alias from env (STELLAR_DEPLOYER_KEY),
+  # or auto-match by iterating local aliases until one resolves to the same pubkey.
+  local deployer_alias="${STELLAR_DEPLOYER_KEY:-}"
+  if [[ -z "$deployer_alias" ]]; then
+    while IFS= read -r alias; do
+      [[ -z "$alias" ]] && continue
+      local alias_addr
+      alias_addr=$(stellar keys address "$alias" 2>/dev/null || true)
+      if [[ "$alias_addr" == "$deployer" ]]; then
+        deployer_alias="$alias"
+        break
+      fi
+    done < <(stellar keys ls 2>/dev/null)
+  fi
+  [[ -n "$deployer_alias" ]] || die "no stellar-cli key alias matches deployer $deployer — set STELLAR_DEPLOYER_KEY=<alias> or run: stellar keys add <alias> --secret-key"
+
   local contracts=("$pool" "$asp_m" "$asp_nm" "$verifier")
   for contract_id in "${contracts[@]}"; do
-    local cmd="stellar contract extend --id $contract_id --source-account $deployer --network $network --durability persistent --ledgers-to-extend $ledgers_to_extend"
+    local cmd="stellar contract extend --id $contract_id --source-account $deployer_alias --network $network --durability persistent --ledgers-to-extend $ledgers_to_extend"
     step "$contract_id"
     if [[ "$dry_run" == "true" ]]; then
       echo "DRY-RUN: $cmd"
