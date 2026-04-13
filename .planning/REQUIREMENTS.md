@@ -69,7 +69,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 
 ### Local Demo Dashboard
 
-- [ ] **DASH-01**: A local-only dashboard (no public hosting) lets an org owner log in with the admin key and view the org's treasury balance, agent roster, and spend history
+- [x] **DASH-01**: A local-only dashboard (no public hosting) lets an org owner log in with the admin key and view the org's treasury balance, agent roster, and spend history
 - [ ] **DASH-02**: A non-admin client (e.g., Ashford Partners admin) viewing Northfield Capital's dashboard sees zero leakage of Northfield Capital's state — treasury, agents, history all hidden
 - [ ] **DASH-03**: The dashboard is static (no charts, no filters, no design system) per the scope cut order — a `<table>` is sufficient
 
@@ -86,7 +86,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 
 - [ ] **OPS-01**: A `scripts/preflight.sh` script exists that checks: pool TTL > 48 h, facilitator `/health` OK, facilitator float > threshold, RPC event window < 6 days, all contract addresses in `deployments.json` are live, and `REGISTRY_FROZEN=1` is set before recording
 - [x] **OPS-02**: A daily `contract extend` cron (or manual routine) keeps Soroban persistent storage TTL fresh for pool + ASPs + verifier during the 7-day window
-- [ ] **OPS-03**: Pre-generated proofs for the demo flow are cached under `demo/fixtures/` so the live recording does not depend on real-time proving — the README states clearly that proofs are pre-generated for the video (still honest)
+- [x] **OPS-03**: Pre-generated proofs for the demo flow are cached under `demo/fixtures/` so the live recording does not depend on real-time proving — the README states clearly that proofs are pre-generated for the video (still honest)
 - [x] **OPS-04**: A `git secrets` / manual scan confirms no key material ended up in the commit history before submission
 - [x] **OPS-05**: The documented scope cut order lives at the top of `.planning/ROADMAP.md` and is re-read at the start of each working day
 
@@ -193,7 +193,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | GATE-02 | Phase 4 | Complete |
 | GATE-03 | Phase 4 | Complete |
 | GATE-04 | Phase 4 | Complete |
-| DASH-01 | Phase 5 | Pending |
+| DASH-01 | Phase 5 | Complete |
 | DASH-02 | Phase 5 | Pending |
 | DASH-03 | Phase 5 | Pending |
 | DEMO-01 | Phase 6 | Pending |
@@ -204,7 +204,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | DEMO-06 | Phase 6 | Pending |
 | OPS-01 | Phase 5 | Pending |
 | OPS-02 | Phase 5 | Complete |
-| OPS-03 | Phase 5 | Pending |
+| OPS-03 | Phase 5 | Complete |
 | OPS-04 | Phase 0 | Complete |
 | OPS-05 | Phase 0 | Complete |
 
