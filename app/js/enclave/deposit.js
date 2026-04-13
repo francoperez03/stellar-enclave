@@ -229,7 +229,12 @@ export async function depositForOrg(params = {}) {
     // occupies that slot. output_commitment1 (zero-amount change) takes
     // next+1 and we discard it — the change note is never spendable.
     try {
-        const myLeafIndex = myLeafIndexBeforeSubmit != null ? myLeafIndexBeforeSubmit : 0;
+        // getPoolNextIndex() returns a BigInt from the WASM merkle tree — coerce
+        // to Number so saveNote stores a plain integer that the WASM get_proof
+        // binding will later accept (it rejects BigInt args).
+        const myLeafIndex = myLeafIndexBeforeSubmit != null
+            ? Number(myLeafIndexBeforeSubmit)
+            : 0;
         await stateManager?.saveNote?.({
             commitment: commitment0Hex,
             privateKey: keys.orgSpendingPrivKey,

@@ -109,7 +109,10 @@ export async function exportEnclaveNotes({
         const tag = tagByCommitment.get(commitKey);
         if (!tag) continue; // note doesn't belong to this org
 
-        const poolProof = await stateManager.getPoolMerkleProof(note.leafIndex);
+        // MerkleTree.get_proof() is a WASM binding that rejects BigInt args —
+        // pool-store exposes leafIndex as a u32 bigint. Coerce to Number.
+        const leafIndexNum = typeof note.leafIndex === 'bigint' ? Number(note.leafIndex) : Number(note.leafIndex);
+        const poolProof = await stateManager.getPoolMerkleProof(leafIndexNum);
         if (!poolProof) {
             console.warn(`[notes-export] pool proof missing for leafIndex ${note.leafIndex} — skipping`);
             continue;
