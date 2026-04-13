@@ -51,6 +51,22 @@ scripts/smoke-test.sh
 scripts/check-upstream.sh
 ```
 
+## Operations
+
+Solo-builder ops discipline during the 2026-04-10 → 2026-04-17 hackathon window. See [RUNBOOK.md](RUNBOOK.md) for the full routine.
+
+**Daily** (until 2026-04-17):
+
+    ./scripts/preflight.sh pool-ttl-bump
+
+Bumps Soroban persistent TTL for `pool` + `asp_membership` + `asp_non_membership` + `verifier`. Manual discipline — no cron, no launchd. Miss a day and the demo may die silently mid-recording (Pitfall 10, 7-day retention).
+
+**Before each recording take:**
+
+    ./scripts/preflight.sh full-check
+
+Runs the six OPS-01 checks (TTL, /health, float, event window, deployments liveness, REGISTRY_FROZEN=1). Exit 0 iff all pass. See [RUNBOOK.md](RUNBOOK.md) for thresholds and emergency recovery commands.
+
 ## Demo video
 
 A ≤3-minute video demo is recorded on 2026-04-15 (rehearsal) and 2026-04-16 (final). See the DoraHacks submission for the link.
