@@ -80,7 +80,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 - [ ] **DEMO-03**: A working testnet deployment is reachable at submission time: the facilitator, the demo endpoints, and the shielded pool all respond to `scripts/preflight.sh` with zero errors
 - [ ] **DEMO-04**: A submission writeup exists on DoraHacks linking the repo, the video, the testnet contract addresses, and the README
 - [ ] **DEMO-05**: Demo rehearsal recorded on day 5 (2026-04-15) as a backup; final recording on day 6 (2026-04-16); submission uploaded no later than 2026-04-17
-- [ ] **DEMO-06**: The video narration does not claim per-org on-chain ASPs, per-org anonymity sets, mainnet readiness, or security audit status
+- [x] **DEMO-06**: The video narration does not claim per-org on-chain ASPs, per-org anonymity sets, mainnet readiness, or security audit status
 
 ### Operational Hardening
 
@@ -201,7 +201,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | DEMO-03 | Phase 6 | Pending |
 | DEMO-04 | Phase 6 | Pending |
 | DEMO-05 | Phase 6 | Pending |
-| DEMO-06 | Phase 6 | Pending |
+| DEMO-06 | Phase 6 | Complete |
 | OPS-01 | Phase 5 | Complete |
 | OPS-02 | Phase 5 | Complete |
 | OPS-03 | Phase 5 | Complete |

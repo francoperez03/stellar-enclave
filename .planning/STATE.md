@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 07-marketing-landing-page-with-framer-motion-parallax-explains-product-vision-hero-sections-derived-from-existing-docs-go-to-app-cta-enclave-html
-current_plan: "02"
-status: in_progress
-stopped_at: "Completed 07-01-scaffold-apps-landing-PLAN.md"
-last_updated: "2026-04-13T11:23:52Z"
+current_phase: 06-demo-recording-submission
+current_plan: Franco-scope pending (rehearsal, final, YouTube, DoraHacks)
+status: completed
+stopped_at: Completed 07-02-lenis-provider-layout-PLAN.md
+last_updated: "2026-04-13T11:31:38.700Z"
 progress:
   total_phases: 9
   completed_phases: 8
-  total_plans: 37
-  completed_plans: 37
+  total_plans: 43
+  completed_plans: 38
 ---
 
 # Session State
@@ -79,6 +79,7 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 | Phase 05-dashboard-ops-hardening P06 | 3 min | 2 tasks | 4 files |
 | Phase 05-dashboard-ops-hardening P07 | ~4 min | 1 executed + 3 deferred tasks | 2 files |
 | 07-marketing-landing-page | 01 | 4 min | 2 | 10 | 2026-04-13 |
+| Phase 07-marketing-landing-page P02 | 8min | 2 tasks | 8 files |
 
 ## Decisions
 
@@ -187,6 +188,9 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 - [Phase 07-01]: tsconfig.json overrides NodeNext base with module: ESNext + moduleResolution: Bundler — required for Next.js App Router compatibility in the monorepo
 - [Phase 07-01]: .theme-light scope prefix dropped from all utility classes in globals.css — landing is always light-mode; the scoping was a dashboard-specific pattern that adds no value here
 - [Phase 07-01]: npm install from repo root (never from apps/landing/) to preserve workspace hoisting and symlink resolution
+- [Phase 07-02]: LenisProvider is outermost wrapper, MotionProvider is inner — ensures Lenis RAF loop starts before Framer Motion scroll hooks fire
+- [Phase 07-02]: CONSOLE_URL fallback is /enclave.html (same-origin) — works for local dev and same-Vercel-project deploys without requiring an external URL
+- [Phase 07-02]: HAS_VIDEO boolean derived from YOUTUBE_VIDEO_ID.length — section plans use it to conditionally show/hide the Watch demo CTA
 
 ## Blockers
 
@@ -206,9 +210,9 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-13T05:54:44.246Z
-**Stopped at:** Phase 7 UI-SPEC approved
-**Resume file:** .planning/phases/07-marketing-landing-page-with-framer-motion-parallax-explains-product-vision-hero-sections-derived-from-existing-docs-go-to-app-cta-enclave-html/07-UI-SPEC.md
+**Last session:** 2026-04-13T11:31:38.697Z
+**Stopped at:** Completed 07-02-lenis-provider-layout-PLAN.md
+**Resume file:** None
 **Next action:** Franco — 2026-04-15 AM run §1 (Day 5 rehearsal). Then §3 (Day 6 final), §4 (YouTube upload + `./scripts/substitute-video-url.sh`), §5-7 on 2026-04-17 (preflight + claim-hygiene + DoraHacks publish + `./scripts/substitute-dorahacks-url.sh`).
 
 ## Accumulated Context
