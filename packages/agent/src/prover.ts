@@ -302,6 +302,6 @@ export function buildWitnessInputs(params: BuildWitnessParams): WitnessInputs {
     // Outputs: change goes back to org (slot 0), null output (slot 1)
     outAmount: [changeAmount.toString(), '0'],
     outBlinding: [changeBlinding, '0'],
-    outPubKey: [orgSpendingPrivKey, orgSpendingPrivKey], // recipient = org
+    outPubKey: [privKeyField, privKeyField], // recipient = org (normalized mod p)
   };
 }
