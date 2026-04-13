@@ -47,6 +47,16 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
   const RANGE_RE = /ledger range:\s*(\d+)\s*-\s*(\d+)/;
   let effectiveStartLedger = startLedger;
 
+  deps.logger?.info(
+    {
+      startLedger: effectiveStartLedger,
+      latestLedger: latest.sequence,
+      spanLedgers: latest.sequence - effectiveStartLedger,
+      approxDays: ((latest.sequence - effectiveStartLedger) * 5 / 86400).toFixed(1),
+    },
+    "hydrating nullifier cache",
+  );
+
   let cursor: string | undefined;
   let pagesScanned = 0;
   let hydratedCount = 0;
@@ -107,6 +117,15 @@ export async function hydrateNullifierCache(deps: HydrateDeps): Promise<HydrateR
     }
 
     cursor = page.cursor || undefined;
+    deps.logger?.info(
+      {
+        page: pagesScanned,
+        eventsInPage: page.events?.length ?? 0,
+        hydratedSoFar: hydratedCount,
+        nextCursor: cursor ? cursor.slice(0, 12) + "..." : null,
+      },
+      "nullifier cache page scanned",
+    );
   } while (cursor);
 
   deps.cache.hydrate(pendingEntries);

@@ -146,6 +146,27 @@ describe("hydrateNullifierCache", () => {
     expect(result.startLedger).toBe(150_000);
   });
 
+  it("logs start line + per-page lines during multi-page hydration", async () => {
+    const cache = new NullifierCache();
+    const info = vi.fn();
+    const rpc = makeRpcMock([
+      { events: [{ value: {}, transactionHash: "tx1" }], cursor: "CURSOR_A" },
+      { events: [{ value: {}, transactionHash: "tx2" }], cursor: "CURSOR_B" },
+      { events: [{ value: {}, transactionHash: "tx3" }], cursor: undefined },
+    ]);
+    await hydrateNullifierCache({
+      rpc: rpc as any,
+      cache,
+      poolContractId: "CPOOL",
+      hydrateLedgers: 1000,
+      logger: { info, warn: vi.fn(), error: vi.fn() } as any,
+      extractNullifiers: () => ["aa"],
+    });
+    const messages = info.mock.calls.map((call: any[]) => call[1] as string);
+    expect(messages.filter((m) => m === "hydrating nullifier cache")).toHaveLength(1);
+    expect(messages.filter((m) => m === "nullifier cache page scanned")).toHaveLength(3);
+  });
+
   it("retries with oldest retained ledger when RPC reports range-mismatch on first call", async () => {
     const cache = new NullifierCache();
     const warn = vi.fn();
