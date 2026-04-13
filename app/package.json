@@ -4,6 +4,9 @@
   "description": "Private payments app on Stellar",
   "main": "js/app.js",
   "scripts": {
+    "build:css": "tailwindcss -i css/tailwind.src.css -o css/app.css",
+    "dev:css": "tailwindcss -i css/tailwind.src.css -o css/app.css --watch",
+    "dev": "python3 -m http.server 8080",
     "test": "jest",
     "test:e2e": "playwright test --config e2e/playwright.config.js",
     "test:e2e:headed": "playwright test --config e2e/playwright.config.js --headed",
@@ -14,6 +17,7 @@
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.4",
     "@playwright/test": "^1.50.0",
+    "@tailwindcss/cli": "^4.2.2",
     "babel-jest": "^29.7.0",
     "esbuild": "^0.27.2",
     "fake-indexeddb": "^6.2.5",
