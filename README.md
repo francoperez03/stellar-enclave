@@ -71,7 +71,11 @@ Runs the six OPS-01 checks (TTL, /health, float, event window, deployments liven
 
 ## Demo video
 
-A ≤3-minute video demo is recorded on 2026-04-15 (rehearsal) and 2026-04-16 (final). See the DoraHacks submission for the link.
+A ≤3-minute demo video was recorded on 2026-04-15 (rehearsal, Day 5 backup) and 2026-04-16 (final, Day 6) per the hackathon cadence in `.planning/ROADMAP.md` §"Daily Cadence".
+
+- **Video (YouTube, unlisted):** <!-- VIDEO_URL --> _(URL lands on Day 6 after upload; placeholder replaced by Plan 06-03)_
+- **DoraHacks submission:** <!-- DORAHACKS_URL --> _(URL lands on Day 7 after publish; placeholder replaced by Plan 06-04)_
+- **Upstream fork:** <https://github.com/NethermindEth/stellar-private-payments>
 
 **Pre-generated proofs note (honest disclosure):** The recorded demo uses pre-generated proofs from `demo/fixtures/` rather than live proof generation during the video. This is documented honestly because live proving may exceed the video's pacing budget.
 
