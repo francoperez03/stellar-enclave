@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 06-demo-recording-submission
 current_plan: Franco-scope pending (rehearsal, final, YouTube, DoraHacks)
 status: completed
-stopped_at: Completed 07-05-three-orgs-section-PLAN.md
-last_updated: "2026-04-13T11:38:40.534Z"
+stopped_at: Completed 07-06-try-it-footer-PLAN.md
+last_updated: "2026-04-13T11:39:58.984Z"
 progress:
   total_phases: 9
   completed_phases: 8
   total_plans: 43
-  completed_plans: 41
+  completed_plans: 42
 ---
 
 # Session State
@@ -83,6 +83,7 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 | Phase 07-marketing-landing-page P03 | 2min | 2 tasks | 6 files |
 | Phase 07-marketing-landing-page P04 | 3min | 2 tasks | 4 files |
 | Phase 07-marketing-landing-page P05 | 3min | 2 tasks | 4 files |
+| Phase 07-marketing-landing-page P06 | 4min | 2 tasks | 3 files |
 
 ## Decisions
 
@@ -201,6 +202,9 @@ Overall milestone: 8/9 phases complete (Phases 0-6 done; Phase 7 in progress), 3
 - [Phase 07]: pathLength used for SVG arrow animation (not stroke-dashoffset math) — idiomatic Framer Motion 11 pattern
 - [Phase 07]: ThreeOrgs: RSC split — OrgCard/PoolIcon are server, motion lives in ThreeOrgs client parent
 - [Phase 07]: ThreeOrgs: useTransform hoisted to const before JSX return to satisfy rules-of-hooks
+- [Phase 07-06]: Modal-on-click (thumbnail poster + VideoModal) used over inline iframe — keeps visitor on page, avoids double player
+- [Phase 07-06]: Footer is RSC (no framer-motion) — static links have zero hydration overhead (RESEARCH Pitfall 3)
+- [Phase 07-06]: SETUP-04 attribution string wrapped in JSX string literal to preserve middle-dot (·) and be grep-stable
 
 ## Blockers
 
@@ -220,8 +224,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-13T11:38:40.532Z
-**Stopped at:** Completed 07-05-three-orgs-section-PLAN.md
+**Last session:** 2026-04-13T11:39:58.982Z
+**Stopped at:** Completed 07-06-try-it-footer-PLAN.md
 **Resume file:** None
 **Next action:** Franco — 2026-04-15 AM run §1 (Day 5 rehearsal). Then §3 (Day 6 final), §4 (YouTube upload + `./scripts/substitute-video-url.sh`), §5-7 on 2026-04-17 (preflight + claim-hygiene + DoraHacks publish + `./scripts/substitute-dorahacks-url.sh`).
 
