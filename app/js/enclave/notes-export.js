@@ -109,7 +109,7 @@ export async function exportEnclaveNotes({
         const tag = tagByCommitment.get(commitKey);
         if (!tag) continue; // note doesn't belong to this org
 
-        const poolProof = await stateManager.getMerkleProof(note.leafIndex);
+        const poolProof = await stateManager.getPoolMerkleProof(note.leafIndex);
         if (!poolProof) {
             console.warn(`[notes-export] pool proof missing for leafIndex ${note.leafIndex} — skipping`);
             continue;
