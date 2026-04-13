@@ -85,7 +85,7 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 ### Operational Hardening
 
 - [ ] **OPS-01**: A `scripts/preflight.sh` script exists that checks: pool TTL > 48 h, facilitator `/health` OK, facilitator float > threshold, RPC event window < 6 days, all contract addresses in `deployments.json` are live, and `REGISTRY_FROZEN=1` is set before recording
-- [ ] **OPS-02**: A daily `contract extend` cron (or manual routine) keeps Soroban persistent storage TTL fresh for pool + ASPs + verifier during the 7-day window
+- [x] **OPS-02**: A daily `contract extend` cron (or manual routine) keeps Soroban persistent storage TTL fresh for pool + ASPs + verifier during the 7-day window
 - [ ] **OPS-03**: Pre-generated proofs for the demo flow are cached under `demo/fixtures/` so the live recording does not depend on real-time proving — the README states clearly that proofs are pre-generated for the video (still honest)
 - [x] **OPS-04**: A `git secrets` / manual scan confirms no key material ended up in the commit history before submission
 - [x] **OPS-05**: The documented scope cut order lives at the top of `.planning/ROADMAP.md` and is re-read at the start of each working day
@@ -203,7 +203,7 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | DEMO-05 | Phase 6 | Pending |
 | DEMO-06 | Phase 6 | Pending |
 | OPS-01 | Phase 5 | Pending |
-| OPS-02 | Phase 5 | Pending |
+| OPS-02 | Phase 5 | Complete |
 | OPS-03 | Phase 5 | Pending |
 | OPS-04 | Phase 0 | Complete |
 | OPS-05 | Phase 0 | Complete |

@@ -28,7 +28,7 @@ import { generateDepositProof } from '../transaction-builder.js';
 import { submitDeposit } from '../stellar.js';
 import { getCachedOrgKeys } from './keys.js';
 import { getOrgByAdmin, putNoteTag } from './registry.js';
-import { bytesToBigIntLE, generateBlinding } from '../bridge.js';
+import { computeNullifier, computeSignature, bigintToField, bytesToBigIntLE, generateBlinding } from '../bridge.js';
 
 /**
  * Convert a bigint (output commitment) into a 0x-prefixed lowercase hex
@@ -175,11 +175,36 @@ export async function depositForOrg(params = {}) {
     // surface pending balances without waiting for the async indexer path
     // (CONTEXT.md §Deposit flow line 91).
     const commitment0Hex = commitmentToHex(proofResult.sorobanProof.output_commitment0);
+
+    // Phase 5 / D1 — precompute the output-note nullifier at deposit time so
+    // the dashboard can cross-reference facilitator /settlements entries back
+    // to this org without a second derivation site.
+    //
+    // Same computeNullifier WASM binding used by the agent SDK at spend time;
+    // identical inputs here → identical decimal-string nullifier there.
+    // pathIndices=0 because the leaf's tree index is not known until the
+    // deposit lands on-chain; this matches packages/agent/src/types.ts
+    // EnclaveNote.pathIndex default behavior in the Phase 3 fixture.
+    const commitmentBytes  = bigintToField(proofResult.sorobanProof.output_commitment0);
+    const pathIndicesBytes = bigintToField(0n);
+    const signatureBytes   = computeSignature(
+        keys.orgSpendingPrivKey,
+        commitmentBytes,
+        pathIndicesBytes,
+    );
+    const nullifierBytes   = computeNullifier(
+        commitmentBytes,
+        pathIndicesBytes,
+        signatureBytes,
+    );
+    const nullifierDecimal = bytesToBigIntLE(nullifierBytes).toString();
+
     await putNoteTag({
         commitment: commitment0Hex,
         orgId:      org.orgId,
         ledger:     0, // Phase 1 placeholder — demo UI doesn't need real ledger
         amount:     amountStroops.toString(),
+        nullifier:  nullifierDecimal,   // Plan 05-02 — decimal bigint string, same form as ShieldedProofWireFormat.inputNullifiers[]
     });
 
     onStatus?.(`Deposit complete: ${result.txHash}`);

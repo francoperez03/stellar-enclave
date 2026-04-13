@@ -41,7 +41,7 @@ These are the five pitfalls from `research/PITFALLS.md` that can kill the submis
 | 2 | **Prover is browser-WASM-only** — Node-native path may not exist; SDK can't generate proofs without either napi-rs bindings or a Playwright fallback (Pitfall 6) | Blocks SDK + agent demo entirely | **Phase 0 (benchmark)** → Phase 3 (integration) | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
 | 3 | **TTL expiry + RPC 7-day retention** — pool storage TTL expires mid-demo; events outside 7-day window break indexer (Pitfalls 10, 11) | Testnet deploy dies silently during recording | **Phase 0 (smoke test)** + Phase 5 (preflight) | Day-1 `stellar contract invoke -- get_root` against deployed pool; daily `contract extend` routine; `scripts/preflight.sh` blocks recording if TTL <48h or oldest event >6 days. SETUP-05, OPS-01, OPS-02. |
 | 4 | 1/2 | In Progress|  | Day-1 end-to-end `transact` against the deployed testnet pool. If it reverts with OOG, scope pivots immediately to mock facilitator + cached proofs; narrative becomes "proof-of-concept pending mainnet budget tuning". SETUP-05. |
-| 5 | **Testnet flakiness during live recording** — RPC, Horizon, faucet, deployed contracts can all go down during recording (Pitfall 17) | Submission goes out with broken video or no video | **Phase 6 (rehearsal + buffer)** | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
+| 5 | 1/7 | In Progress|  | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
 
 ### Day-1 Kill Switches (all in Phase 0)
 
@@ -190,7 +190,14 @@ Plans:
   3. `scripts/preflight.sh` checks in one green run: pool TTL >48h, facilitator `/health` OK, float > threshold, RPC oldest event <6 days, `deployments.json` addresses live, `REGISTRY_FROZEN=1` set (OPS-01).
   4. A daily `contract extend` routine (cron or manual, documented) keeps pool + ASPs + verifier TTL fresh through 2026-04-17 (OPS-02).
   5. Pre-generated proofs for the demo flow live under `demo/fixtures/`; the README states explicitly that recording uses pre-generated proofs (OPS-03, cut 5 pre-applied defensively).
-**Plans**: TBD
+**Plans**: 7 plans across 3 waves (wave 1 parallel primitives -> wave 2 dashboard UI -> wave 3 end-to-end verification)
+  - [ ] 05-01-facilitator-settlements-log.md - Persistent /settlements log on the facilitator (DASH-01 spend-history source; wave 1)
+  - [ ] 05-02-deposit-nullifier-precompute.md - Registry schema bump + deposit-time nullifier precompute via computeNullifier (DASH-01 bug-proof cross-reference; wave 1)
+  - [ ] 05-03-sdk-fixture-capture-mode.md - ENCLAVE_FIXTURE_CAPTURE=1 branch in the agent SDK (OPS-03; wave 1)
+  - [ ] 05-04-preflight-full-check.md - scripts/preflight.sh full-check subcommand with 6 OPS-01 gates + bats tests (OPS-01; wave 1)
+  - [ ] 05-05-ops02-daily-ttl-routine-docs.md - RUNBOOK.md + README Operations section documenting the daily pool-ttl-bump (OPS-02; wave 1)
+  - [ ] 05-06-dashboard-ui.md - Dashboard section inside app/enclave.html: paste-key login, three HTML tables, cross-org isolation (DASH-01, DASH-02, DASH-03; wave 2)
+  - [ ] 05-07-e2e-verification.md - Capture-mode dry run + live full-check + DASH-02 manual check + README claim hygiene (all six reqs; wave 3)
 
 **Cut decision if Phase 5 slips:** Apply cut 1 — the dashboard becomes a single `GET /dashboard/:orgId` returning a bare `<table>`; no login, no multi-page navigation. Do NOT cut `scripts/preflight.sh` or the TTL routine — they are the insurance policy for the recording day.
 
