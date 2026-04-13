@@ -41,7 +41,7 @@ These are the five pitfalls from `research/PITFALLS.md` that can kill the submis
 | 2 | **Prover is browser-WASM-only** — Node-native path may not exist; SDK can't generate proofs without either napi-rs bindings or a Playwright fallback (Pitfall 6) | Blocks SDK + agent demo entirely | **Phase 0 (benchmark)** → Phase 3 (integration) | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
 | 3 | **TTL expiry + RPC 7-day retention** — pool storage TTL expires mid-demo; events outside 7-day window break indexer (Pitfalls 10, 11) | Testnet deploy dies silently during recording | **Phase 0 (smoke test)** + Phase 5 (preflight) | Day-1 `stellar contract invoke -- get_root` against deployed pool; daily `contract extend` routine; `scripts/preflight.sh` blocks recording if TTL <48h or oldest event >6 days. SETUP-05, OPS-01, OPS-02. |
 | 4 | 1/2 | In Progress|  | Day-1 end-to-end `transact` against the deployed testnet pool. If it reverts with OOG, scope pivots immediately to mock facilitator + cached proofs; narrative becomes "proof-of-concept pending mainnet budget tuning". SETUP-05. |
-| 5 | 5/7 | In Progress|  | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
+| 5 | 6/7 | In Progress|  | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
 
 ### Day-1 Kill Switches (all in Phase 0)
 

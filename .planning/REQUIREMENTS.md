@@ -70,8 +70,8 @@ Hackathon MVP. Every requirement must be demoable by 2026-04-17. Derived from [P
 ### Local Demo Dashboard
 
 - [x] **DASH-01**: A local-only dashboard (no public hosting) lets an org owner log in with the admin key and view the org's treasury balance, agent roster, and spend history
-- [ ] **DASH-02**: A non-admin client (e.g., Ashford Partners admin) viewing Northfield Capital's dashboard sees zero leakage of Northfield Capital's state — treasury, agents, history all hidden
-- [ ] **DASH-03**: The dashboard is static (no charts, no filters, no design system) per the scope cut order — a `<table>` is sufficient
+- [x] **DASH-02**: A non-admin client (e.g., Ashford Partners admin) viewing Northfield Capital's dashboard sees zero leakage of Northfield Capital's state — treasury, agents, history all hidden
+- [x] **DASH-03**: The dashboard is static (no charts, no filters, no design system) per the scope cut order — a `<table>` is sufficient
 
 ### Hackathon Deliverables
 
@@ -194,8 +194,8 @@ Populated 2026-04-10 by `gsd-roadmapper`. Every v1 requirement maps to exactly o
 | GATE-03 | Phase 4 | Complete |
 | GATE-04 | Phase 4 | Complete |
 | DASH-01 | Phase 5 | Complete |
-| DASH-02 | Phase 5 | Pending |
-| DASH-03 | Phase 5 | Pending |
+| DASH-02 | Phase 5 | Complete |
+| DASH-03 | Phase 5 | Complete |
 | DEMO-01 | Phase 6 | Pending |
 | DEMO-02 | Phase 6 | Pending |
 | DEMO-03 | Phase 6 | Pending |
