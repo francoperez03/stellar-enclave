@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 03-agent-sdk-enclave-agent
 current_plan: Not started
 status: planning
-stopped_at: Completed 05-06-PLAN.md
-last_updated: "2026-04-13T01:21:25.649Z"
+stopped_at: Completed 05-07-PLAN.md (PARTIAL — Tasks 1-3 deferred to recording-day pre-flight)
+last_updated: "2026-04-13T01:34:19.335Z"
 progress:
   total_phases: 8
-  completed_phases: 6
-  total_plans: 32
-  completed_plans: 31
+  completed_phases: 7
+  total_plans: 36
+  completed_plans: 32
 ---
 
 # Session State
@@ -72,6 +72,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 | Phase 05-dashboard-ops-hardening P01 | 3 min | 2 tasks | 13 files |
 | Phase 05-dashboard-ops-hardening P04 | 5 min | 2 tasks | 2 files |
 | Phase 05-dashboard-ops-hardening P06 | 3 min | 2 tasks | 4 files |
+| Phase 05-dashboard-ops-hardening P07 | ~4 min | 1 executed + 3 deferred tasks | 2 files |
 
 ## Decisions
 
@@ -170,6 +171,7 @@ Overall milestone: 3/7 phases complete, 20/24 plans complete.
 - [Phase 05-06]: BigInt end-to-end for USDC balance math; display layer formats via integer division — no Number() conversion
 - [Phase 05-06]: DASH-02 isolation: null orgId short-circuit + by_nullifier miss drops cross-org settlements; facilitator stays org-blind (D4)
 - [Phase 05-06]: Privkey: type=password input, no sessionStorage/localStorage writes, no logging — demo-honest owner-local posture
+- [Phase 05-dashboard-ops-hardening]: Plan 05-07 closed as PARTIAL by user request — Tasks 1–3 (SDK capture-mode dry run, live preflight full-check, DASH-02 cross-org isolation) deferred to Franco's recording-day pre-flight outside the GSD flow. Task 4 (README/RUNBOOK claim hygiene) PASS. Commands captured in .planning/phases/05-dashboard-ops-hardening/05-07-VERIFICATION.md. demo/fixtures/demo-endpoint.json NOT created by this plan — it is Task 1's live-run output.
 
 ## Blockers
 
@@ -188,8 +190,8 @@ None.
 
 ## Session
 
-**Last session:** 2026-04-13T01:21:25.647Z
-**Stopped at:** Completed 05-06-PLAN.md
+**Last session:** 2026-04-13T01:34:19.333Z
+**Stopped at:** Completed 05-07-PLAN.md (PARTIAL — Tasks 1-3 deferred to recording-day pre-flight)
 **Resume file:** None
 **Next action:** Execute 03-04-PLAN.md (Wave 2 — witness-inputs builder / Model X shared-key note selection — SDK-07). Downstream: 03-05 (createAgent + fetch interceptor + note selector wiring).
 

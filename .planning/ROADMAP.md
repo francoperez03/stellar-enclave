@@ -41,7 +41,7 @@ These are the five pitfalls from `research/PITFALLS.md` that can kill the submis
 | 2 | **Prover is browser-WASM-only** — Node-native path may not exist; SDK can't generate proofs without either napi-rs bindings or a Playwright fallback (Pitfall 6) | Blocks SDK + agent demo entirely | **Phase 0 (benchmark)** → Phase 3 (integration) | Day-1 benchmark records Node vs browser vs Playwright proving times in `docs/benchmarks.md`. SETUP-06. If >3s, fallback is Playwright + pre-generated fixtures. |
 | 3 | **TTL expiry + RPC 7-day retention** — pool storage TTL expires mid-demo; events outside 7-day window break indexer (Pitfalls 10, 11) | Testnet deploy dies silently during recording | **Phase 0 (smoke test)** + Phase 5 (preflight) | Day-1 `stellar contract invoke -- get_root` against deployed pool; daily `contract extend` routine; `scripts/preflight.sh` blocks recording if TTL <48h or oldest event >6 days. SETUP-05, OPS-01, OPS-02. |
 | 4 | 1/2 | In Progress|  | Day-1 end-to-end `transact` against the deployed testnet pool. If it reverts with OOG, scope pivots immediately to mock facilitator + cached proofs; narrative becomes "proof-of-concept pending mainnet budget tuning". SETUP-05. |
-| 5 | 6/7 | In Progress|  | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
+| 5 | 7/7 | Complete (partial — Tasks 1–3 of 05-07 deferred to recording-day pre-flight) |  | Day 5 = rehearsal + backup recording; day 6 = final recording; day 7 = rescue + submission buffer. DEMO-05. |
 
 ### Day-1 Kill Switches (all in Phase 0)
 
@@ -63,7 +63,7 @@ If ANY of these fail on day 1, the scope pivots the same morning:
 - [x] **Phase 3: Agent SDK (`@enclave/agent`)** — Ship the Node-runnable agent client with proving, key hygiene, and structured logging. (completed 2026-04-12)
 - [x] **Phase 03.1: Agent Wire Format Fix** (INSERTED) — Populate ShieldedProofWireFormat public inputs from `publicInputBytes` in fetch-interceptor. Unblocks agent → facilitator → pool e2e. (completed 2026-04-12)
 - [ ] **Phase 4: Enclave Gate Middleware + Gated Endpoint** — Add the `withEnclaveGate` middleware, one gated demo endpoint, and the enrollment-freeze discipline.
-- [ ] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL cron, cached demo fixtures.
+- [x] **Phase 5: Dashboard + Ops Hardening** — Local-only dashboard, preflight script, TTL routine, cached demo fixtures. (completed 2026-04-13; Plan 05-07 Tasks 1–3 deferred to recording-day pre-flight)
 - [ ] **Phase 6: Demo Recording + Submission** — Rehearsal, final recording, README, DoraHacks writeup, submission.
 
 ## Phase Details
@@ -196,8 +196,8 @@ Plans:
   - [x] 05-03-PLAN.md - ENCLAVE_FIXTURE_CAPTURE=1 branch in the agent SDK (OPS-03; wave 1)
   - [x] 05-04-PLAN.md - scripts/preflight.sh full-check subcommand with 6 OPS-01 gates + bats tests (OPS-01; wave 1)
   - [x] 05-05-PLAN.md - RUNBOOK.md + README Operations section documenting the daily pool-ttl-bump (OPS-02; wave 1)
-  - [ ] 05-06-PLAN.md - Dashboard section inside app/enclave.html: paste-key login, three HTML tables, cross-org isolation (DASH-01, DASH-02, DASH-03; wave 2)
-  - [ ] 05-07-PLAN.md - Capture-mode dry run + live full-check + DASH-02 manual check + README claim hygiene (all six reqs; wave 3)
+  - [x] 05-06-PLAN.md - Dashboard section inside app/enclave.html: paste-key login, three HTML tables, cross-org isolation (DASH-01, DASH-02, DASH-03; wave 2)
+  - [x] 05-07-PLAN.md - Capture-mode dry run + live full-check + DASH-02 manual check + README claim hygiene (Task 4 PASS; Tasks 1–3 deferred to recording-day pre-flight — see 05-07-VERIFICATION.md)
 
 **Cut decision if Phase 5 slips:** Apply cut 1 — the dashboard becomes a single `GET /dashboard/:orgId` returning a bare `<table>`; no login, no multi-page navigation. Do NOT cut `scripts/preflight.sh` or the TTL routine — they are the insurance policy for the recording day.
 
@@ -338,7 +338,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6
 | 2. Facilitator Bridge | 8/8 | Complete | 2026-04-12 |
 | 3. Agent SDK (`@enclave/agent`) | 3/5 | In Progress | - |
 | 4. Enclave Gate Middleware + Gated Endpoint | 0/2 | Planned | - |
-| 5. Dashboard + Ops Hardening | 0/TBD | Not started | - |
+| 5. Dashboard + Ops Hardening | 7/7 | Complete (partial — 05-07 Tasks 1–3 deferred to recording-day pre-flight) | 2026-04-13 |
 | 6. Demo Recording + Submission | 0/4 | Not started | Planned (4 plans) |
 
 ---
