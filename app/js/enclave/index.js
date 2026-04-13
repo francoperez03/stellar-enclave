@@ -588,6 +588,7 @@ async function handleEnrollSubmit() {
             orgId: state.activeOrg.orgId,
             agentName: name,
             deployments: state.deployments,
+            facilitatorUrl: getFacilitatorUrl(),
         });
         state.lastAgentBundle = bundle;
         state.lastAgentName = name;

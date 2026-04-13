@@ -96,7 +96,7 @@ export function buildEnrollmentBundle(p) {
         aspMembershipContractId:    d.asp_membership,
         aspNonMembershipContractId: d.asp_non_membership,
         verifierContractId:         d.verifier,
-        facilitatorUrl: p.facilitatorUrl || 'http://localhost:3000',
+        facilitatorUrl: p.facilitatorUrl || 'http://localhost:4021',
         network:        p.network || d.network || 'testnet',
         createdAt:      p.createdAt || new Date().toISOString(),
     };

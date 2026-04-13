@@ -80,7 +80,7 @@ async function deriveAgentAuthPubKey(authPrivKey) {
  *                  or duplicate (orgId, agentName)
  */
 export async function enrollAgent(params = {}) {
-    const { adminAddress, orgId, agentName, deployments } = params;
+    const { adminAddress, orgId, agentName, deployments, facilitatorUrl } = params;
 
     if (!adminAddress) {
         throw new Error('enrollAgent: adminAddress required');
@@ -146,6 +146,7 @@ export async function enrollAgent(params = {}) {
         agentAuthKey:        u8ToHex(authPrivKey),
         adminStellarAddress: adminAddress,
         deployments,
+        facilitatorUrl,
     });
 
     return { bundle, agentRow };

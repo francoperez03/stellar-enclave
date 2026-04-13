@@ -13,7 +13,7 @@
  *   - agentAuthKey, adminStellarAddress
  *   - poolContractId, aspMembershipContractId,
  *     aspNonMembershipContractId, verifierContractId
- *   - facilitatorUrl (default 'http://localhost:3000')
+ *   - facilitatorUrl (default 'http://localhost:4021')
  *   - network (default 'testnet' or deployments.network)
  *   - createdAt
  *
@@ -105,7 +105,7 @@ describe('Enrollment bundle — schema contract', () => {
         expect(bundle.verifierContractId).toBe('CVERIFIER_ID');
 
         // Defaults
-        expect(bundle.facilitatorUrl).toBe('http://localhost:3000');
+        expect(bundle.facilitatorUrl).toBe('http://localhost:4021');
         expect(bundle.network).toBe('testnet');
 
         // createdAt must be a valid ISO string
@@ -239,7 +239,7 @@ describe('Enrollment bundle — round-trip from enrollAgent', () => {
         expect(bundle.verifierContractId).toBe(ROUND_DEPLOYMENTS.verifier);
 
         // Defaults
-        expect(bundle.facilitatorUrl).toBe('http://localhost:3000');
+        expect(bundle.facilitatorUrl).toBe('http://localhost:4021');
         expect(bundle.network).toBe('testnet');
 
         // createdAt must be a valid ISO string
