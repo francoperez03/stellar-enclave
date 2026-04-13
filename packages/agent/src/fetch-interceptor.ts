@@ -138,14 +138,35 @@ function normalizeFixtureExtData(raw: Record<string, unknown>): ExtData {
 }
 
 /** Extract decomposed proof components (a/b/c) from a fixture ShieldedProof entry.
- *  The fixture's `proof.proof` field is the 256-byte uncompressed Groth16 proof. */
-function decomposeFixtureProof(proofArr: number[]): { a: Uint8Array; b: Uint8Array; c: Uint8Array } {
-  const bytes = Uint8Array.from(proofArr);
-  return {
-    a: bytes.slice(0, 64),
-    b: bytes.slice(64, 192),
-    c: bytes.slice(192, 256),
-  };
+ *
+ * Two on-disk shapes are accepted:
+ *   1. `proof: { a, b, c }` where each component is a hex string (this is what
+ *      Plan 05-03 capture mode writes and what wallets/circuits/fixtures/e2e-proof.json
+ *      uses). a=64 bytes, b=128 bytes, c=64 bytes.
+ *   2. `proof: { proof: number[] }` legacy compact form — flat 256-byte array
+ *      sliced 64/128/64.
+ */
+function decomposeFixtureProofAny(rawProof: unknown): { a: Uint8Array; b: Uint8Array; c: Uint8Array } {
+  const p = rawProof as Record<string, unknown>;
+  if (p && typeof p['a'] === 'string' && typeof p['b'] === 'string' && typeof p['c'] === 'string') {
+    return {
+      a: fromHex(p['a'] as string),
+      b: fromHex(p['b'] as string),
+      c: fromHex(p['c'] as string),
+    };
+  }
+  if (p && Array.isArray(p['a']) && Array.isArray(p['b']) && Array.isArray(p['c'])) {
+    return {
+      a: Uint8Array.from(p['a'] as number[]),
+      b: Uint8Array.from(p['b'] as number[]),
+      c: Uint8Array.from(p['c'] as number[]),
+    };
+  }
+  if (p && Array.isArray(p['proof'])) {
+    const bytes = Uint8Array.from(p['proof'] as number[]);
+    return { a: bytes.slice(0, 64), b: bytes.slice(64, 192), c: bytes.slice(192, 256) };
+  }
+  throw new Error('fixture proof has unknown shape: expected {a,b,c} hex strings, byte arrays, or {proof: number[]}');
 }
 
 /** Extract decomposed public inputs from a fixture entry.
@@ -263,10 +284,9 @@ export async function createInterceptingFetch(
     if (fixtureEntry && !captureMode) {
       // Fixture mode: skip WASM prover (SDK-03 / OPS-03 pre-generated proof)
       log.info({ url, phase: 'prove' }, 'fixture cache hit — using pre-generated proof');
-      const fxProof = fixtureEntry.proof as unknown as { proof: number[] };
       const fxExt = fixtureEntry.extData as unknown as Record<string, unknown>;
       proofPayload = {
-        proof: decomposeFixtureProof(fxProof.proof),
+        proof: decomposeFixtureProofAny(fixtureEntry.proof),
         publicInputs: extractFixturePublicInputs(fixtureEntry),
         extData: normalizeFixtureExtData(fxExt),
         nullifier: fixtureEntry.note.nullifier,

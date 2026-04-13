@@ -33,6 +33,9 @@ export ENCLAVE_REPO_PATH="\${ENCLAVE_REPO_PATH:-${REPO_PATH_DEFAULT}}"
 export ENCLAVE_BUNDLE_PATH="$PWD/bundle.json"
 export ENCLAVE_NOTES_PATH="$PWD/notes.json"
 export ENCLAVE_PROVING_ARTIFACTS_PATH="\${ENCLAVE_PROVING_ARTIFACTS_PATH:-$ENCLAVE_REPO_PATH/proving-artifacts}"
+# Fixture replay (Option B): pre-generated proof from a prior test fixture,
+# keyed by the demo URL. Agent skips WASM prover and replays bytes.
+export ENCLAVE_FIXTURE_PATH="\${ENCLAVE_FIXTURE_PATH:-$ENCLAVE_REPO_PATH/demo/fixtures/demo-endpoint.json}"
 
 # Service URLs (override via env if deploying elsewhere)
 export FACILITATOR_URL="\${FACILITATOR_URL:-${facilitatorUrl}}"

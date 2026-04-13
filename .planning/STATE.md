@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 07-marketing-landing-page
-current_plan: 07-07 complete
+current_plan: Not started
 status: completed
-stopped_at: Completed 07-07-deploy-validation-smoke-tests-PLAN.md
-last_updated: "2026-04-13T11:46:50.000Z"
+stopped_at: Completed 07-07-deploy-validation-smoke-tests-PLAN.md — Phase 7 agent-scope CLOSED
+last_updated: "2026-04-13T11:53:38.993Z"
 progress:
   total_phases: 9
   completed_phases: 9
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md
 
 **Milestone:** v1.0 milestone
 **Current phase:** 07-marketing-landing-page
-**Current Plan:** 07-07 complete — Phase 7 agent-scope closed
+**Current Plan:** Not started
 **Total Plans in Phase:** 7
-**Status:** Agent-scope complete 2026-04-13 — all 7 plans executed; Playwright 12/12 green; build exits 0
+**Status:** Milestone complete
 
 ## Progress
 
